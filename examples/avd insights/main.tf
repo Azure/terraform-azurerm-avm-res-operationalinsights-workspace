@@ -53,15 +53,3 @@ module "log_analytics_workspace" {
   # ...
 }
 
-resource "azurerm_log_analytics_solution" "law_solution" {
-  solution_name         = "ContainerInsights"
-  location              = azurerm_resource_group.rg.location
-  resource_group_name   = azurerm_resource_group.rg.name
-  workspace_resource_id = module.log_analytics_workspace.law_resource_id
-  workspace_name        = module.log_analytics_workspace.law_name
-  plan {
-    publisher = "Microsoft"
-    product   = "OMSGallery/ContainerInsights"
-  }
-}
-
