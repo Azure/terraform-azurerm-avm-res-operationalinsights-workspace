@@ -8,15 +8,11 @@ terraform {
   }
 }
 
-variable "enable_telemetry" {
-  type        = bool
-  default     = true
-  description = <<DESCRIPTION
-This variable controls whether or not telemetry is enabled for the module.
-For more information see https://aka.ms/avm/telemetryinfo.
-If it is set to false, then no telemetry will be collected.
-DESCRIPTION
+provider "azurerm" {
+  features {}
 }
+
+
 
 # This ensures we have unique CAF compliant names for our resources.
 module "naming" {
@@ -43,25 +39,15 @@ module "log_analytics_workspace" {
   enable_telemetry                = var.enable_telemetry
   location                        = azurerm_resource_group.rg.location
   resource_group_name             = azurerm_resource_group.rg.name
-  law_name                        = module.naming.log_analytics_workspace.name
+  law_name                        = "law-avm"
   law_sku                         = "PerGB2018"
   retention_in_days               = 30
   allow_resource_only_permissions = true
-  local_auth_disabled             = false
-  internet_ingestion_enabled      = true
-  internet_query_enabled          = true
+  local_auth_disabled        = true
+  internet_ingestion_enabled = true
+  internet_query_enabled     = true
+  identity = {
+    type         = "SystemAssigned"
+  }
   # ...
 }
-
-resource "azurerm_log_analytics_solution" "law_solution" {
-  solution_name         = "ContainerInsights"
-  location              = azurerm_resource_group.rg.location
-  resource_group_name   = azurerm_resource_group.rg.name
-  workspace_resource_id = module.log_analytics_workspace.law_resource_id
-  workspace_name        = module.log_analytics_workspace.law_name
-  plan {
-    publisher = "Microsoft"
-    product   = "OMSGallery/ContainerInsights"
-  }
-}
-
