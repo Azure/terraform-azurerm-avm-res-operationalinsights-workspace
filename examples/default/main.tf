@@ -43,11 +43,11 @@ module "log_analytics_workspace" {
   law_sku                         = "PerGB2018"
   retention_in_days               = 30
   allow_resource_only_permissions = true
-  local_auth_disabled        = true
-  internet_ingestion_enabled = true
-  internet_query_enabled     = true
+  local_auth_disabled             = true
+  internet_ingestion_enabled      = true
+  internet_query_enabled          = true
   identity = {
-    type         = "SystemAssigned"
+    type = "SystemAssigned"
   }
   # ...
 }
