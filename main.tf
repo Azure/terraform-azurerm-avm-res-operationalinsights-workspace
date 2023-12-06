@@ -12,6 +12,7 @@ resource "azurerm_log_analytics_workspace" "law" {
     type         = var.identity.type
     identity_ids = var.identity.identity_ids
   }
+  tags = var.tags
 
 }
 
