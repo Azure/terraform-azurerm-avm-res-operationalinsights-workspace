@@ -1,18 +1,21 @@
 terraform {
-  required_version = ">= 1.0.0"
+  required_version = ">= 1.3.0"
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
       version = ">= 3.7.0, < 4.0.0"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = ">= 3.5.0, < 4.0.0"
+    }
+    template = "~>2.0"
   }
 }
 
 provider "azurerm" {
   features {}
 }
-
-
 
 # This ensures we have unique CAF compliant names for our resources.
 module "naming" {
@@ -39,5 +42,5 @@ module "log_analytics_workspace" {
   enable_telemetry    = var.enable_telemetry
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  name                = "this-${module.naming.resource_group.name_unique}"
+  name                = "thislaworkspace"
 }
