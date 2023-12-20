@@ -15,7 +15,6 @@ terraform {
       source  = "hashicorp/random"
       version = ">= 3.5.0, < 4.0.0"
     }
-    template = "~>2.0"
   }
 }
 
@@ -62,8 +61,6 @@ The following requirements are needed by this module:
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.7.0, < 4.0.0)
 
 - <a name="requirement_random"></a> [random](#requirement\_random) (>= 3.5.0, < 4.0.0)
-
-- <a name="requirement_template"></a> [template](#requirement\_template) (~>2.0)
 
 ## Providers
 
