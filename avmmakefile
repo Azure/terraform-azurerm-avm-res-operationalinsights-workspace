@@ -1,0 +1,91 @@
+REMOTE_SCRIPT := "https://raw.githubusercontent.com/Azure/tfmod-scaffold/main/avm_scripts$(AVMSCRIPT_VERSION)"
+
+docs:
+	curl -H 'Cache-Control: no-cache, no-store' -sSL "$(REMOTE_SCRIPT)/docs-gen.sh" | sh -s
+
+docscheck:
+	curl -H 'Cache-Control: no-cache, no-store' -sSL "$(REMOTE_SCRIPT)/docs-check.sh" | sh -s
+
+fmt: gofmt terrafmt
+	@echo "==> Fixing Terraform code with terraform fmt..."
+	terraform fmt -recursive
+
+gofmt:
+	@echo "==> Fixing source code with gofmt..."
+	@files=$$(find . -name '*.go' | grep -v vendor); if [ -n "$$files" ]; then echo $$files | xargs gofmt -s -w; fi
+
+tools:
+	go install github.com/katbyte/terrafmt@latest
+	go install golang.org/x/tools/cmd/goimports@latest
+	go install mvdan.cc/gofumpt@latest
+	go install github.com/terraform-docs/terraform-docs@latest
+	go install github.com/lonegunmanb/avmfix@latest
+	go install github.com/magodo/hclgrep@latest
+
+fumpt:
+	curl -H 'Cache-Control: no-cache, no-store' -sSL "$(REMOTE_SCRIPT)/go-fumpt.sh" | sh -s
+
+gosec:
+	curl -H 'Cache-Control: no-cache, no-store' -sSL "$(REMOTE_SCRIPT)/gosec.sh" | sh -s
+
+tffmtcheck:
+	curl -H 'Cache-Control: no-cache, no-store' -sSL "$(REMOTE_SCRIPT)/terraform-fmt.sh" | sh -s
+
+tfvalidatecheck:
+	curl -H 'Cache-Control: no-cache, no-store' -sSL "$(REMOTE_SCRIPT)/terraform-validate.sh" | sh -s
+
+terrafmtcheck:
+	curl -H 'Cache-Control: no-cache, no-store' -sSL "$(REMOTE_SCRIPT)/terrafmt-check.sh" | sh -s
+
+gofmtcheck:
+	curl -H 'Cache-Control: no-cache, no-store' -sSL "$(REMOTE_SCRIPT)/gofmtcheck.sh" | sh -s
+	curl -H 'Cache-Control: no-cache, no-store' -sSL "$(REMOTE_SCRIPT)/fumptcheck.sh" | sh -s
+
+golint:
+	curl -H 'Cache-Control: no-cache, no-store' -sSL "$(REMOTE_SCRIPT)/run-golangci-lint.sh" | sh -s
+
+tflint:
+	curl -H 'Cache-Control: no-cache, no-store' -sSL "$(REMOTE_SCRIPT)/run-tflint.sh" | sh -s
+
+lint: golint tflint gosec
+
+checkovcheck:
+	curl -H 'Cache-Control: no-cache, no-store' -sSL "$(REMOTE_SCRIPT)/checkovcheck.sh" | sh -s
+
+checkovplancheck:
+	curl -H 'Cache-Control: no-cache, no-store' -sSL "$(REMOTE_SCRIPT)/checkovplancheck.sh" | sh -s
+
+fmtcheck: gofmtcheck tffmtcheck terrafmtcheck
+
+pr-check: fmtcheck tfvalidatecheck lint unit-test
+
+unit-test:
+	curl -H 'Cache-Control: no-cache, no-store' -sSL "$(REMOTE_SCRIPT)/run-unit-test.sh" | sh -s
+
+test-example:
+	curl -H 'Cache-Control: no-cache, no-store' -sSL "$(REMOTE_SCRIPT)/test-example.sh" | sh -s
+
+e2e-test:
+	curl -H 'Cache-Control: no-cache, no-store' -sSL "$(REMOTE_SCRIPT)/run-e2e-test.sh" | sh -s
+
+version-upgrade-test:
+	curl -H 'Cache-Control: no-cache, no-store' -sSL "$(REMOTE_SCRIPT)/version-upgrade-test.sh" | sh -s
+
+terrafmt:
+	curl -H 'Cache-Control: no-cache, no-store' -sSL "$(REMOTE_SCRIPT)/terrafmt.sh" | sh -s
+
+pre-commit: depsensure fmt fumpt docs autofix
+
+depsensure:
+	curl -H 'Cache-Control: no-cache, no-store' -sSL "$(REMOTE_SCRIPT)/deps-ensure.sh" | sh -s
+
+yor-tag:
+	curl -H 'Cache-Control: no-cache, no-store' -sSL "$(REMOTE_SCRIPT)/yor-tag.sh" | sh -s
+
+autofix:
+	curl -H 'Cache-Control: no-cache, no-store' -sSL "$(REMOTE_SCRIPT)/autofix.sh" | sh -s
+
+grept-apply:
+	curl -H 'Cache-Control: no-cache, no-store' -sSL "$(REMOTE_SCRIPT)/grept-apply.sh" | sh -s
+
+.PHONY: docs docscheck fmt gofmt tools fumpt gosec tffmtcheck tfvalidatecheck terrafmtcheck gofmtcheck golint tflint lint checkovcheck checkovplancheck fmtcheck pr-check unit-test e2e-test version-upgrade-test terrafmt pre-commit depsensure yor-tag autofix
