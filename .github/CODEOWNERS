@@ -1,7 +1,3 @@
 # AVM core team owns key files
 .github/policies/ @Azure/avm-core-team-technical
 .github/CODEOWNERS @Azure/avm-core-team-technical
-
-* @Azure/avm-res-operationalinsights-workspace-module-contributors-tf
-* @Azure/avm-res-operationalinsights-workspace-module-owners-tf
-
