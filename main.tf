@@ -6,7 +6,6 @@ resource "azurerm_log_analytics_workspace" "this" {
   allow_resource_only_permissions    = var.log_analytics_workspace_allow_resource_only_permissions
   cmk_for_query_forced               = var.log_analytics_workspace_cmk_for_query_forced
   daily_quota_gb                     = var.log_analytics_workspace_daily_quota_gb
-  data_collection_rule_id            = var.log_analytics_workspace_data_collection_rule_id
   internet_ingestion_enabled         = var.log_analytics_workspace_internet_ingestion_enabled
   internet_query_enabled             = var.log_analytics_workspace_internet_query_enabled
   local_authentication_disabled      = var.log_analytics_workspace_local_authentication_disabled

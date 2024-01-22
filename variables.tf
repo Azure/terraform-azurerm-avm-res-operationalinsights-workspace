@@ -49,12 +49,6 @@ variable "log_analytics_workspace_daily_quota_gb" {
   description = "(Optional) The workspace daily quota for ingestion in GB. Defaults to -1 (unlimited) if omitted."
 }
 
-variable "log_analytics_workspace_data_collection_rule_id" {
-  type        = string
-  default     = null
-  description = "(Optional) The ID of the Data Collection Rule to use for this workspace."
-}
-
 variable "log_analytics_workspace_identity" {
   type = object({
     identity_ids = optional(set(string))

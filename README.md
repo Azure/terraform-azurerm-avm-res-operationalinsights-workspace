@@ -145,14 +145,6 @@ Type: `number`
 
 Default: `null`
 
-### <a name="input_log_analytics_workspace_data_collection_rule_id"></a> [log\_analytics\_workspace\_data\_collection\_rule\_id](#input\_log\_analytics\_workspace\_data\_collection\_rule\_id)
-
-Description: (Optional) The ID of the Data Collection Rule to use for this workspace.
-
-Type: `string`
-
-Default: `null`
-
 ### <a name="input_log_analytics_workspace_identity"></a> [log\_analytics\_workspace\_identity](#input\_log\_analytics\_workspace\_identity)
 
 Description: - `identity_ids` - (Optional) Specifies a list of user managed identity ids to be assigned. Required if `type` is `UserAssigned`.

@@ -10,17 +10,17 @@ fmt: gofmt terrafmt
 	@echo "==> Fixing Terraform code with terraform fmt..."
 	terraform fmt -recursive
 
-gofmt:
-	@echo "==> Fixing source code with gofmt..."
-	@files=$$(find . -name '*.go' | grep -v vendor); if [ -n "$$files" ]; then echo $$files | xargs gofmt -s -w; fi
-
 tools:
 	go install github.com/katbyte/terrafmt@latest
 	go install golang.org/x/tools/cmd/goimports@latest
 	go install mvdan.cc/gofumpt@latest
-	go install github.com/terraform-docs/terraform-docs@latest
+	go install github.com/terraform-docs/terraform-docs@v0.17.0
 	go install github.com/lonegunmanb/avmfix@latest
 	go install github.com/magodo/hclgrep@latest
+
+gofmt:
+	@echo "==> Fixing source code with gofmt..."
+	@files=$$(find . -name '*.go' | grep -v vendor); if [ -n "$$files" ]; then echo $$files | xargs gofmt -s -w; fi
 
 fumpt:
 	curl -H 'Cache-Control: no-cache, no-store' -sSL "$(REMOTE_SCRIPT)/go-fumpt.sh" | sh -s
@@ -74,7 +74,7 @@ version-upgrade-test:
 terrafmt:
 	curl -H 'Cache-Control: no-cache, no-store' -sSL "$(REMOTE_SCRIPT)/terrafmt.sh" | sh -s
 
-pre-commit: depsensure fmt fumpt docs autofix
+pre-commit: depsensure fmt fumpt autofix docs
 
 depsensure:
 	curl -H 'Cache-Control: no-cache, no-store' -sSL "$(REMOTE_SCRIPT)/deps-ensure.sh" | sh -s
@@ -88,4 +88,4 @@ autofix:
 grept-apply:
 	curl -H 'Cache-Control: no-cache, no-store' -sSL "$(REMOTE_SCRIPT)/grept-apply.sh" | sh -s
 
-.PHONY: docs docscheck fmt gofmt tools fumpt gosec tffmtcheck tfvalidatecheck terrafmtcheck gofmtcheck golint tflint lint checkovcheck checkovplancheck fmtcheck pr-check unit-test e2e-test version-upgrade-test terrafmt pre-commit depsensure yor-tag autofix
+.PHONY: docs docscheck fmt gofmt fumpt gosec tffmtcheck tfvalidatecheck terrafmtcheck gofmtcheck golint tflint lint checkovcheck checkovplancheck fmtcheck pr-check unit-test e2e-test version-upgrade-test terrafmt pre-commit depsensure yor-tag autofix tools
