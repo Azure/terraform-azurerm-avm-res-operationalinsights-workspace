@@ -27,7 +27,7 @@ jobs:
 
   testexamples:
     if: github.event.repository.name != 'terraform-azurerm-avm-template'
-    runs-on: [ self-hosted, 1ES.Pool= ]
+    runs-on: [ self-hosted, 1ES.Pool=4f1853ac728ad999fa345515d8ac8c4760e50fd7 ]
     needs: getexamples
     environment: test
     env:
@@ -37,6 +37,7 @@ jobs:
       matrix:
         example: ${{ fromJson(needs.getexamples.outputs.examples) }}
       max-parallel: 5
+      fail-fast: false
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 #v4.1.1
 

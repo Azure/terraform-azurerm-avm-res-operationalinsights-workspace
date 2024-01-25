@@ -36,7 +36,10 @@ override.tf.json
 .terraformrc
 terraform.rc
 *tfplan*
+.terraform.lock.hcl
 README-generated.md
 avm.tflint.hcl
+avm.tflint.merged.hcl
 avm.tflint_example.hcl
+avm.tflint_example.merged.hcl
 avmmakefile
