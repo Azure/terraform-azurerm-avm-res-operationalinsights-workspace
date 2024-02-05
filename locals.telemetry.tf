@@ -28,19 +28,20 @@ locals {
   )
 
   # This is an empty ARM deployment template.
-  telem_arm_template_content = <<TEMPLATE
-{
-  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-  "contentVersion": "1.0.0.0",
-  "parameters": {},
-  "variables": {},
-  "resources": [],
-  "outputs": {
-    "telemetry": {
-      "type": "String",
-      "value": "For more information, see https://aka.ms/avm/telemetry"
+  # This is an empty ARM deployment template.
+  telem_arm_template_content = jsonencode(
+    {
+      "$schema"        = "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+      "contentVersion" = "1.0.0.0",
+      "parameters"     = {},
+      "variables"      = {},
+      "resources"      = [],
+      "outputs" = {
+        "telemetry" = {
+          "type"  = "String",
+          "value" = "For more information, see https://aka.ms/avm/telemetry"
+        }
+      }
     }
-  }
-}
-TEMPLATE
+  )
 }
