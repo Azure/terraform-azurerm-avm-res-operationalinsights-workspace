@@ -1,7 +1,7 @@
 # TODO: insert outputs here.
 output "id" {
   description = "The Resource ID of the Log Analytics Workspace."
-  value       = azurerm_log_analytics_workspace.this
+  value       = azurerm_log_analytics_workspace.this.id
 }
 
 output "name" {
@@ -11,5 +11,5 @@ output "name" {
 
 output "workspace_id" {
   description = "The Resource ID of the Log Analytics Workspace."
-  value       = azurerm_log_analytics_workspace.this
+  value       = azurerm_log_analytics_workspace.this.workspace_id
 }
