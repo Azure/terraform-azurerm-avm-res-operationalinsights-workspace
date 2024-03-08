@@ -49,7 +49,7 @@ resource "azurerm_log_analytics_solution" "solution" {
   location              = azurerm_resource_group.rg.location
   resource_group_name   = azurerm_resource_group.rg.name
   workspace_resource_id = module.log_analytics_workspace.workspace_id.id
-  workspace_name        = module.log_analytics_workspace.name
+  workspace_name        = module.log_analytics_workspace.workspace_id.name
   plan {
     publisher = "Microsoft"
     product   = "OMSGallery/ContainerInsights"

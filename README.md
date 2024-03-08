@@ -278,6 +278,10 @@ Description: The Resource ID of the Log Analytics Workspace.
 
 Description: The Name of the Log Analytics Workspace.
 
+### <a name="output_resource"></a> [resource](#output\_resource)
+
+Description: The Log Analytics Workspace resource
+
 ### <a name="output_workspace_id"></a> [workspace\_id](#output\_workspace\_id)
 
 Description: The Resource ID of the Log Analytics Workspace.
