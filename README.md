@@ -270,10 +270,6 @@ Default: `{}`
 
 The following outputs are exported:
 
-### <a name="output_id"></a> [id](#output\_id)
-
-Description: The Resource ID of the Log Analytics Workspace.
-
 ### <a name="output_name"></a> [name](#output\_name)
 
 Description: The Name of the Log Analytics Workspace.
