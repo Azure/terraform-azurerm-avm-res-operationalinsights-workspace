@@ -31,7 +31,6 @@ resource "azurerm_log_analytics_workspace" "this" {
     }
   }
 }
-
 # Applying Management Lock to the Virtual Network if specified.
 resource "azurerm_management_lock" "this" {
   count      = var.lock.kind != "None" ? 1 : 0
