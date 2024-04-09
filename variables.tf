@@ -10,7 +10,7 @@ DESCRIPTION
 
 variable "location" {
   type        = string
-  description = "(Required) Specifies the suppored Azure location where the Log Anayltics Workspace should exist. Changing this forces a new resource to be created"
+  description = "(Required) Specifies the suppored Azure location where the Log Analytics Workspace should exist. Changing this forces a new resource to be created"
   nullable    = false
 }
 
