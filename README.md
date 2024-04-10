@@ -1,7 +1,7 @@
 <!-- BEGIN_TF_DOCS -->
 # terraform-azurerm-avm-res-operationalinsights-workspace
 
-This repo is to deploy an Log Anayltics Workspace.
+This repo is to deploy an Log Analytics Workspace.
 
 Major version Zero (0.y.z) is for initial development. Anything MAY change at any time. The module SHOULD NOT be considered stable till at least it is major version one (1.0.0) or greater. Changes will always be via new versions being published and no changes will be made to existing published versions. For more details please go to <https://semver.org/>
 
@@ -42,7 +42,7 @@ The following input variables are required:
 
 ### <a name="input_location"></a> [location](#input\_location)
 
-Description: (Required) Specifies the suppored Azure location where the Log Anayltics Workspace should exist. Changing this forces a new resource to be created
+Description: (Required) Specifies the suppored Azure location where the Log Analytics Workspace should exist. Changing this forces a new resource to be created
 
 Type: `string`
 
