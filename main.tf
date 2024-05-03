@@ -31,15 +31,7 @@ resource "azurerm_log_analytics_workspace" "this" {
     }
   }
 }
-# Applying Management Lock to the Virtual Network if specified.
-resource "azurerm_management_lock" "this" {
-  count      = var.lock.kind != "None" ? 1 : 0
-  lock_level = var.lock.kind
-  name       = coalesce(var.lock.name, "lock-${var.name}")
-  scope      = azurerm_log_analytics_workspace.this.id
-}
 
-# Assigning Roles to the Virtual Network based on the provided configurations.
 # Example resource declaration
 resource "azurerm_role_assignment" "this" {
   for_each                               = var.role_assignments
