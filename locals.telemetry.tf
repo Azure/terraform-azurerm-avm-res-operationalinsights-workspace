@@ -1,10 +1,6 @@
 locals {
-  # TODO: change this to the name of the module. See https://azure.github.io/Azure-Verified-Modules/specs/shared/#id-sfr3---category-telemetry---deploymentusage-telemetry
-  module_name = "CHANGEME"
-  # TODO: Change this. Should be either `res` or `ptn`
+  module_name = "terraform-azurerm-avm-res-operationalinsights-workspace"
   module_type = "res"
-  # This constructs the ARM deployment name that is used for the telemetry.
-  # We shouldn't ever hit the 64 character limit but use substr just in case.
   telem_arm_deployment_name = substr(
     format(
       "%s.%s.%s.v%s.%s",

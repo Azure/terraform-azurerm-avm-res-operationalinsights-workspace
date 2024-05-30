@@ -45,6 +45,7 @@ resource "azurerm_role_assignment" "this" {
   role_definition_name                   = strcontains(lower(each.value.role_definition_id_or_name), lower(local.role_definition_resource_substring)) ? null : each.value.role_definition_id_or_name
   skip_service_principal_aad_check       = each.value.skip_service_principal_aad_check
 }
+
 resource "azurerm_monitor_diagnostic_setting" "this" {
   for_each = var.diagnostic_settings
 
@@ -77,3 +78,13 @@ resource "azurerm_monitor_diagnostic_setting" "this" {
   }
 }
 
+resource "azurerm_management_lock" "this" {
+  count = var.lock != null ? 1 : 0
+
+  lock_level = var.lock.kind
+  name       = coalesce(var.lock.name, "lock-${var.lock.kind}")
+  scope      = azurerm_log_analytics_workspace.this.id
+  notes      = var.lock.kind == "CanNotDelete" ? "Cannot delete the resource or its child resources." : "Cannot delete or modify the resource or its child resources."
+}
+
+  
