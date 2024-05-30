@@ -12,7 +12,7 @@ resource "azurerm_private_endpoint" "this" {
   private_service_connection {
     is_manual_connection           = false
     name                           = each.value.private_service_connection_name != null ? each.value.private_service_connection_name : "pse-${var.name}"
-    private_connection_resource_id = azurerm_key_vault.this.id
+    private_connection_resource_id = azurerm_log_analytics_workspace.this.id
     subresource_names              = ["law"] # map to each.value.subresource_name if there are multiple services.
   }
   dynamic "ip_configuration" {
@@ -39,5 +39,5 @@ resource "azurerm_private_endpoint_application_security_group_association" "this
   for_each = local.private_endpoint_application_security_group_associations
 
   application_security_group_id = each.value.asg_resource_id
-  private_endpoint_id           = var.private_endpoints_manage_dns_zone_group ? azurerm_private_endpoint.this_managed_dns_zone_groups[each.value.pe_key].id : azurerm_private_endpoint.this_unmanaged_dns_zone_groups[each.value.pe_key].id
+  private_endpoint_id           = azurerm_private_endpoint.this[each.value.pe_key].id
 }
