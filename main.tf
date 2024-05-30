@@ -87,4 +87,3 @@ resource "azurerm_management_lock" "this" {
   notes      = var.lock.kind == "CanNotDelete" ? "Cannot delete the resource or its child resources." : "Cannot delete or modify the resource or its child resources."
 }
 
-  
