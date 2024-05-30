@@ -13,7 +13,7 @@ resource "azurerm_private_endpoint" "this" {
     is_manual_connection           = false
     name                           = each.value.private_service_connection_name != null ? each.value.private_service_connection_name : "pse-${var.name}"
     private_connection_resource_id = azurerm_key_vault.this.id
-    subresource_names              = ["MYSERVICE"] # map to each.value.subresource_name if there are multiple services.
+    subresource_names              = ["law"] # map to each.value.subresource_name if there are multiple services.
   }
   dynamic "ip_configuration" {
     for_each = each.value.ip_configurations
@@ -21,8 +21,8 @@ resource "azurerm_private_endpoint" "this" {
     content {
       name               = ip_configuration.value.name
       private_ip_address = ip_configuration.value.private_ip_address
-      member_name        = "MYSERVICE" # map to each.value.subresource_name if there are multiple services.
-      subresource_name   = "MYSERVICE" # map to each.value.subresource_name if there are multiple services.
+      member_name        = "law" # map to each.value.subresource_name if there are multiple services.
+      subresource_name   = "law" # map to each.value.subresource_name if there are multiple services.
     }
   }
   dynamic "private_dns_zone_group" {
