@@ -1,5 +1,5 @@
 locals {
-  module_name = "terraform-azurerm-avm-res-operationalinsights-workspace"
+  module_name = "operationalinsights-workspace"
   module_type = "res"
   telem_arm_deployment_name = substr(
     format(

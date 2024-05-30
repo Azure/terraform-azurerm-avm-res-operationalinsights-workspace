@@ -1,5 +1,4 @@
 locals {
-  enable_telemetry = var.enable_telemetry
   private_endpoint_application_security_group_associations = { for assoc in flatten([
     for pe_k, pe_v in var.private_endpoints : [
       for asg_k, asg_v in pe_v.application_security_group_associations : {
@@ -9,5 +8,8 @@ locals {
       }
     ]
   ]) : "${assoc.pe_key}-${assoc.asg_key}" => assoc }
+}
+
+locals {
   role_definition_resource_substring = "/providers/Microsoft.Authorization/roleDefinitions"
 }
