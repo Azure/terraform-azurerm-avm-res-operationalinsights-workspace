@@ -202,11 +202,11 @@ EOT
 }
 
 variable "private_endpoints" {
-  type = map(string({
+  type = map(object({
     name                                    = optional(string, null)
     role_assignments                        = optional(map(object({})), {})
     lock                                    = optional(object({}), {})
-    tags                                    = optional(map(any), null)
+    tags                                    = optional(map(string), null)
     subnet_resource_id                      = string
     private_dns_zone_group_name             = optional(string, "default")
     private_dns_zone_resource_ids           = optional(set(string), [])
