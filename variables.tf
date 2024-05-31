@@ -202,7 +202,7 @@ EOT
 }
 
 variable "private_endpoints" {
-  type = map(object({
+  type = map(string({
     name                                    = optional(string, null)
     role_assignments                        = optional(map(object({})), {})
     lock                                    = optional(object({}), {})

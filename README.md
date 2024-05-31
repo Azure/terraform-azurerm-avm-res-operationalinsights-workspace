@@ -281,7 +281,7 @@ Description:   A map of private endpoints to create on the Key Vault. The map ke
 Type:
 
 ```hcl
-map(object({
+map(string({
     name                                    = optional(string, null)
     role_assignments                        = optional(map(object({})), {})
     lock                                    = optional(object({}), {})
