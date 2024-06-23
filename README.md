@@ -320,14 +320,6 @@ Type: `string`
 
 Default: `null`
 
-### <a name="input_monitor_private_link_scoped_service_resource_group_name"></a> [monitor\_private\_link\_scoped\_service\_resource\_group\_name](#input\_monitor\_private\_link\_scoped\_service\_resource\_group\_name)
-
-Description: (Required) The name of the Resource Group where the Azure Monitor Private Link Scoped Service should exist. Changing this forces a new resource to be created.
-
-Type: `string`
-
-Default: `null`
-
 ### <a name="input_private_endpoints"></a> [private\_endpoints](#input\_private\_endpoints)
 
 Description:   A map of private endpoints to create on the Key Vault. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
