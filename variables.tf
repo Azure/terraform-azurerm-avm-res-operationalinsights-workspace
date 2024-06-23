@@ -4,6 +4,12 @@ variable "location" {
   nullable    = false
 }
 
+variable "monitor_private_link_scope_name" {
+  type        = string
+  description = "The name of the Azure Monitor Private Link Scope. Changing this forces a new resource to be created."
+  default = null
+}
+
 variable "name" {
   type        = string
   description = "Specifies the name of the Log Analytics Workspace. Changing this forces a new resource to be created."
@@ -201,6 +207,28 @@ variable "log_analytics_workspace_timeouts" {
 EOT
 }
 
+variable "monitor_private_link_scope_tags" {
+  type        = map(string)
+  default     = null
+  description = "(Optional) A mapping of tags which should be assigned to the Azure Monitor Private Link Scope."
+}
+
+variable "monitor_private_link_scope_timeouts" {
+  type = object({
+    create = optional(string)
+    delete = optional(string)
+    read   = optional(string)
+    update = optional(string)
+  })
+  default     = null
+  description = <<-EOT
+ - `create` - (Defaults to 30 minutes) Used when creating the Azure Monitor Private Link Scope.
+ - `delete` - (Defaults to 30 minutes) Used when deleting the Azure Monitor Private Link Scope.
+ - `read` - (Defaults to 5 minutes) Used when retrieving the Azure Monitor Private Link Scope.
+ - `update` - (Defaults to 30 minutes) Used when updating the Azure Monitor Private Link Scope.
+EOT
+}
+
 variable "private_endpoints" {
   type = map(object({
     name = optional(string, null)
@@ -296,4 +324,38 @@ variable "tags" {
   type        = map(string)
   default     = null
   description = "(Optional) Tags of the resource."
+}
+
+variable "monitor_private_link_scoped_service_name" {
+  type        = string
+  default     = null
+  description = "(Required) The name of the Azure Monitor Private Link Scoped Service. Changing this forces a new resource to be created."
+}
+
+variable "monitor_private_link_scoped_service_resource_group_name" {
+  type        = string
+  default     = null
+  description = "(Required) The name of the Resource Group where the Azure Monitor Private Link Scoped Service should exist. Changing this forces a new resource to be created."
+}
+
+variable "monitor_private_link_scope_ingestion_access_mode" {
+  type        = string
+  default     = null
+  description = "(Optional) The default ingestion access mode for the associated private endpoints in scope. Possible values are Open and PrivateOnly. Defaults to Open."
+
+  validation {
+    condition     = var.monitor_private_link_scope_ingestion_access_mode != null ? contains(["Open", "PrivateOnly"], var.monitor_private_link_scope_ingestion_access_mode) : true
+    error_message = "The ingestion access mode values are 'Open or 'PrivateOnly."
+  }
+}
+
+variable "monitor_private_link_scope_query_access_mode" {
+  type        = string
+  default     = null
+  description = "(Optional) The default query access mode for hte associated private endpoints in scope. Possible values are Open and PrivateOnly. Defaults to Open."
+
+  validation {
+    condition     = var.monitor_private_link_scope_query_access_mode != null ? contains(["Open", "PrivateOnly"], var.monitor_private_link_scope_query_access_mode) : true
+    error_message = "The ingestion access mode values are 'Open or 'PrivateOnly."
+  }
 }
