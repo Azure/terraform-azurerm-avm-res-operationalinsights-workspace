@@ -257,12 +257,6 @@ variable "monitor_private_link_scoped_service_name" {
   description = "(Required) The name of the Azure Monitor Private Link Scoped Service. Changing this forces a new resource to be created."
 }
 
-variable "monitor_private_link_scoped_service_resource_group_name" {
-  type        = string
-  default     = null
-  description = "(Required) The name of the Resource Group where the Azure Monitor Private Link Scoped Service should exist. Changing this forces a new resource to be created."
-}
-
 variable "private_endpoints" {
   type = map(object({
     name = optional(string, null)
