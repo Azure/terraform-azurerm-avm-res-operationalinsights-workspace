@@ -1,13 +1,11 @@
-# Deploy Private Endpoint with Log Analytics Solution
+# Deploy Network Isolation
 
-This examples deploys Private Endpoint with Log Analytics Solution.
+This examples deploys network isolation with log analytics workspace using Private Endpoints and Azure Monitor Private Link Service.
 
 - Log Analytics Workspace
-- Log Analytics Solution
 - Private Endpoint
 - Virtual Network
 - Subnet
 - Private DNS Zone
 - Azure Monitor Private Link Scope
 - Azure Monitor Private Link Scope Service
-
