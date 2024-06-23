@@ -31,6 +31,8 @@ The following resources are used by this module:
 - [azurerm_log_analytics_workspace.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/log_analytics_workspace) (resource)
 - [azurerm_management_lock.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/management_lock) (resource)
 - [azurerm_monitor_diagnostic_setting.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/monitor_diagnostic_setting) (resource)
+- [azurerm_monitor_private_link_scope.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/monitor_private_link_scope) (resource)
+- [azurerm_monitor_private_link_scoped_service.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/monitor_private_link_scoped_service) (resource)
 - [azurerm_private_endpoint.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_endpoint) (resource)
 - [azurerm_private_endpoint_application_security_group_association.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_endpoint_application_security_group_association) (resource)
 - [azurerm_resource_group_template_deployment.telemetry](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group_template_deployment) (resource)
@@ -255,6 +257,74 @@ object({
     update = optional(string)
   })
 ```
+
+Default: `null`
+
+### <a name="input_monitor_private_link_scope_ingestion_access_mode"></a> [monitor\_private\_link\_scope\_ingestion\_access\_mode](#input\_monitor\_private\_link\_scope\_ingestion\_access\_mode)
+
+Description: (Optional) The default ingestion access mode for the associated private endpoints in scope. Possible values are Open and PrivateOnly. Defaults to Open.
+
+Type: `string`
+
+Default: `null`
+
+### <a name="input_monitor_private_link_scope_name"></a> [monitor\_private\_link\_scope\_name](#input\_monitor\_private\_link\_scope\_name)
+
+Description: The name of the Azure Monitor Private Link Scope. Changing this forces a new resource to be created.
+
+Type: `string`
+
+Default: `null`
+
+### <a name="input_monitor_private_link_scope_query_access_mode"></a> [monitor\_private\_link\_scope\_query\_access\_mode](#input\_monitor\_private\_link\_scope\_query\_access\_mode)
+
+Description: (Optional) The default query access mode for hte associated private endpoints in scope. Possible values are Open and PrivateOnly. Defaults to Open.
+
+Type: `string`
+
+Default: `null`
+
+### <a name="input_monitor_private_link_scope_tags"></a> [monitor\_private\_link\_scope\_tags](#input\_monitor\_private\_link\_scope\_tags)
+
+Description: (Optional) A mapping of tags which should be assigned to the Azure Monitor Private Link Scope.
+
+Type: `map(string)`
+
+Default: `null`
+
+### <a name="input_monitor_private_link_scope_timeouts"></a> [monitor\_private\_link\_scope\_timeouts](#input\_monitor\_private\_link\_scope\_timeouts)
+
+Description: - `create` - (Defaults to 30 minutes) Used when creating the Azure Monitor Private Link Scope.
+- `delete` - (Defaults to 30 minutes) Used when deleting the Azure Monitor Private Link Scope.
+- `read` - (Defaults to 5 minutes) Used when retrieving the Azure Monitor Private Link Scope.
+- `update` - (Defaults to 30 minutes) Used when updating the Azure Monitor Private Link Scope.
+
+Type:
+
+```hcl
+object({
+    create = optional(string)
+    delete = optional(string)
+    read   = optional(string)
+    update = optional(string)
+  })
+```
+
+Default: `null`
+
+### <a name="input_monitor_private_link_scoped_service_name"></a> [monitor\_private\_link\_scoped\_service\_name](#input\_monitor\_private\_link\_scoped\_service\_name)
+
+Description: (Required) The name of the Azure Monitor Private Link Scoped Service. Changing this forces a new resource to be created.
+
+Type: `string`
+
+Default: `null`
+
+### <a name="input_monitor_private_link_scoped_service_resource_group_name"></a> [monitor\_private\_link\_scoped\_service\_resource\_group\_name](#input\_monitor\_private\_link\_scoped\_service\_resource\_group\_name)
+
+Description: (Required) The name of the Resource Group where the Azure Monitor Private Link Scoped Service should exist. Changing this forces a new resource to be created.
+
+Type: `string`
 
 Default: `null`
 

@@ -49,30 +49,32 @@ resource "azurerm_resource_group" "this" {
   name     = module.naming.resource_group.name_unique
 }
 
-resource "azurerm_virtual_network" "this" {
-  address_space       = ["192.168.0.0/24"]
-  location            = azurerm_resource_group.this.location
+module "vnet" {
+  source              = "Azure/avm-res-network-virtualnetwork/azurerm"
+  version             = "~> 0.2.3"
   name                = module.naming.virtual_network.name_unique
   resource_group_name = azurerm_resource_group.this.name
+  location            = azurerm_resource_group.this.location
+  address_space       = ["10.0.0.0/16"]
+  subnets = {
+    subnet0 = {
+      name             = module.naming.subnet.name_unique
+      address_prefixes = ["10.0.0.0/24"]
+    }
+  }
 }
 
-resource "azurerm_subnet" "this" {
-  address_prefixes     = ["192.168.0.0/24"]
-  name                 = module.naming.subnet.name_unique
-  resource_group_name  = azurerm_resource_group.this.name
-  virtual_network_name = azurerm_virtual_network.this.name
-}
-
-resource "azurerm_private_dns_zone" "this" {
-  name = "privatelink.workspace.azure.net"
+module "privatednszone" {
+  source              = "Azure/avm-res-network-privatednszone/azurerm"
+  version             = "~> 0.1.1"
+  domain_name         = "privatelink.workspace.azure.net"
   resource_group_name = azurerm_resource_group.this.name
-}
-
-resource "azurerm_private_dns_zone_virtual_network_link" "name" {
-  name = "dnslinktovnet"
-  resource_group_name = azurerm_resource_group.this.name
-  virtual_network_id = azurerm_virtual_network.this.id
-  private_dns_zone_name = azurerm_private_dns_zone.this.name
+  virtual_network_links = {
+    vnetlink0 = {
+      vnetlinkname = "dnslinktovnet"
+      vnetid       = module.vnet.resource.id
+    }
+  }
 }
 
 # This is the module call
@@ -88,34 +90,15 @@ module "law" {
   log_analytics_workspace_identity = {
     type = "SystemAssigned"
   }
-}
-
-resource "azurerm_monitor_private_link_scope" "this" {
-  name                = "law-ampls"
-  resource_group_name = azurerm_resource_group.this.name
-}
-
-resource "azurerm_monitor_private_link_scoped_service" "this" {
-  name                = "law-amplsservice"
-  resource_group_name = azurerm_resource_group.this.name
-  scope_name          = azurerm_monitor_private_link_scope.this.name
-  linked_resource_id  = module.law.resource.id
-}
-
-resource "azurerm_private_endpoint" "pe" {
-  name = "pe"
-  location = azurerm_resource_group.this.location
-  resource_group_name = azurerm_resource_group.this.name
-  subnet_id = azurerm_subnet.this.id
-  private_dns_zone_group {
-    name = "law-dns-zone-group"
-    private_dns_zone_ids = [ azurerm_private_dns_zone.this.id ]
-  }
-  private_service_connection {
-    name = "connection"
-    private_connection_resource_id = azurerm_monitor_private_link_scope.this.id
-    subresource_names = [ "azuremonitor" ]
-    is_manual_connection = false
+  monitor_private_link_scope_name          = "law_pl"
+  monitor_private_link_scoped_service_name = "law_pl_service"
+  private_endpoints = {
+    pe1 = {
+      name                          = module.naming.private_endpoint.name_unique
+      subnet_resource_id            = module.vnet.subnets["subnet0"].resource.id
+      private_dns_zone_resource_ids = [module.privatednszone.private_dnz_zone_output.id]
+      network_interface_name        = "nic-pe-law"
+    }
   }
 }
 ```
@@ -143,14 +126,7 @@ The following providers are used by this module:
 
 The following resources are used by this module:
 
-- [azurerm_monitor_private_link_scope.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/monitor_private_link_scope) (resource)
-- [azurerm_monitor_private_link_scoped_service.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/monitor_private_link_scoped_service) (resource)
-- [azurerm_private_dns_zone.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_dns_zone) (resource)
-- [azurerm_private_dns_zone_virtual_network_link.name](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_dns_zone_virtual_network_link) (resource)
-- [azurerm_private_endpoint.pe](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_endpoint) (resource)
 - [azurerm_resource_group.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
-- [azurerm_subnet.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
-- [azurerm_virtual_network.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_network) (resource)
 - [random_integer.region_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
 
 <!-- markdownlint-disable MD013 -->
@@ -191,6 +167,18 @@ Version:
 Source: Azure/naming/azurerm
 
 Version: 0.3.0
+
+### <a name="module_privatednszone"></a> [privatednszone](#module\_privatednszone)
+
+Source: Azure/avm-res-network-privatednszone/azurerm
+
+Version: ~> 0.1.1
+
+### <a name="module_vnet"></a> [vnet](#module\_vnet)
+
+Source: Azure/avm-res-network-virtualnetwork/azurerm
+
+Version: ~> 0.2.3
 
 <!-- markdownlint-disable-next-line MD041 -->
 ## Data Collection

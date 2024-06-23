@@ -3,7 +3,6 @@ resource "azurerm_monitor_private_link_scope" "this" {
   resource_group_name = var.resource_group_name
   tags                = var.monitor_private_link_scope_tags
 
-
   dynamic "timeouts" {
     for_each = var.monitor_private_link_scope_timeouts == null ? [] : [var.monitor_private_link_scope_timeouts]
     content {
@@ -16,8 +15,8 @@ resource "azurerm_monitor_private_link_scope" "this" {
 }
 
 resource "azurerm_monitor_private_link_scoped_service" "this" {
+  linked_resource_id  = azurerm_log_analytics_workspace.this.id
   name                = var.monitor_private_link_scoped_service_name
   resource_group_name = var.resource_group_name
   scope_name          = azurerm_monitor_private_link_scope.this.name
-  linked_resource_id  = azurerm_log_analytics_workspace.this.id
 }
