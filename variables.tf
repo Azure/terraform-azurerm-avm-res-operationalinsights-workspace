@@ -222,7 +222,7 @@ variable "monitor_private_link_scope_query_access_mode" {
   type        = string
   default     = null
   description = "(Optional) The default query access mode for hte associated private endpoints in scope. Possible values are Open and PrivateOnly. Defaults to Open."
-  
+
   validation {
     condition     = var.monitor_private_link_scope_query_access_mode != null ? contains(["Open", "PrivateOnly"], var.monitor_private_link_scope_query_access_mode) : true
     error_message = "The ingestion access mode values are 'Open or 'PrivateOnly."

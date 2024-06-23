@@ -2,7 +2,6 @@ resource "azurerm_monitor_private_link_scope" "this" {
   name                = var.monitor_private_link_scope_name
   resource_group_name = var.resource_group_name
   tags                = var.monitor_private_link_scope_tags
-  
 
   dynamic "timeouts" {
     for_each = var.monitor_private_link_scope_timeouts == null ? [] : [var.monitor_private_link_scope_timeouts]
