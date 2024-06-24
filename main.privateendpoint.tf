@@ -12,7 +12,7 @@ resource "azurerm_private_endpoint" "this" {
   private_service_connection {
     is_manual_connection           = false
     name                           = each.value.private_service_connection_name != null ? each.value.private_service_connection_name : "pse-${var.name}"
-    private_connection_resource_id = azurerm_monitor_private_link_scope.this.id
+    private_connection_resource_id = azurerm_monitor_private_link_scope.this[each.key.].id
     subresource_names              = ["azuremonitor"] # map to each.value.subresource_name if there are multiple services.
   }
   dynamic "ip_configuration" {

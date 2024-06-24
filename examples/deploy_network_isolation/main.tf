@@ -76,9 +76,11 @@ module "law" {
     type = "SystemAssigned"
   }
   monitor_private_link_scope = {
+    pl1 = {
       name = "law_pl_scope"
       ingestion_access_mode = "PrivateOnly"
       query_access_mode = "PrivateOnly"
+   }
   }
   monitor_private_link_scoped_service_name = "law_pl_service"
   private_endpoints = {

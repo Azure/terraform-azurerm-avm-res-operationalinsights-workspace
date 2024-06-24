@@ -202,12 +202,12 @@ EOT
 }
 
 variable "monitor_private_link_scope" {
-  type = object({
+  type = map(object({
     ingestion_access_mode = optional(string, "PrivateOnly")
     name                  = optional(string, null)
     query_access_mode     = optional(string, "PrivateOnly")
     tags                  = optional(map(string), null)
-  })
+  }))
   default = {}
   description = <<EOD
   A map of objects representing Azure Monitor Private Link Scopes. Each object can contain the following attributes:
