@@ -209,13 +209,13 @@ variable "monitor_private_link_scope" {
     tags                  = optional(map(string), null)
   }))
   default     = {}
-  description = <<EOD
+  description = <<DESCRIPTION
   A map of objects representing Azure Monitor Private Link Scopes. Each object can contain the following attributes:
     - ingestion_access_mode: (Optional) The default ingestion access mode for the associated private endpoints in scope. Possible values are 'Open' and 'PrivateOnly'. Defaults to 'Open'.
     - name: The name of the Azure Monitor Private Link Scope. Changing this forces a new resource to be created.
     - query_access_mode: (Optional) The default query access mode for the associated private endpoints in scope. Possible values are 'Open' and 'PrivateOnly'. Defaults to 'Open'.
     - tags: (Optional) A mapping of tags which should be assigned to the Azure Monitor Private Link Scope.
-  EOD
+  DESCRIPTION
   nullable    = false
 }
 
@@ -281,7 +281,7 @@ variable "private_endpoints" {
 
 variable "private_endpoints_manage_dns_zone_group" {
   type        = bool
-  default     = true
+  default     = null
   description = "Whether to manage private DNS zone groups with this module. If set to false, you must manage private DNS zone groups externally, e.g. using Azure Policy."
   nullable    = false
 }

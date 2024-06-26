@@ -352,7 +352,7 @@ Description: Whether to manage private DNS zone groups with this module. If set 
 
 Type: `bool`
 
-Default: `true`
+Default: `null`
 
 ### <a name="input_role_assignments"></a> [role\_assignments](#input\_role\_assignments)
 
