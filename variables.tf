@@ -201,6 +201,30 @@ variable "log_analytics_workspace_timeouts" {
 EOT
 }
 
+variable "monitor_private_link_scope" {
+  type = map(object({
+    ingestion_access_mode = optional(string, "PrivateOnly")
+    name                  = optional(string, null)
+    query_access_mode     = optional(string, "PrivateOnly")
+    tags                  = optional(map(string), null)
+  }))
+  default     = {}
+  description = <<DESCRIPTION
+  A map of objects representing Azure Monitor Private Link Scopes. Each object can contain the following attributes:
+    - ingestion_access_mode: (Optional) The default ingestion access mode for the associated private endpoints in scope. Possible values are 'Open' and 'PrivateOnly'. Defaults to 'Open'.
+    - name: The name of the Azure Monitor Private Link Scope. Changing this forces a new resource to be created.
+    - query_access_mode: (Optional) The default query access mode for the associated private endpoints in scope. Possible values are 'Open' and 'PrivateOnly'. Defaults to 'Open'.
+    - tags: (Optional) A mapping of tags which should be assigned to the Azure Monitor Private Link Scope.
+  DESCRIPTION
+  nullable    = false
+}
+
+variable "monitor_private_link_scoped_service_name" {
+  type        = string
+  default     = null
+  description = "(Required) The name of the Azure Monitor Private Link Scoped Service. Changing this forces a new resource to be created."
+}
+
 variable "private_endpoints" {
   type = map(object({
     name = optional(string, null)
@@ -252,13 +276,6 @@ variable "private_endpoints" {
     - `name` - The name of the IP configuration.
     - `private_ip_address` - The private IP address of the IP configuration.
   DESCRIPTION
-  nullable    = false
-}
-
-variable "private_endpoints_manage_dns_zone_group" {
-  type        = bool
-  default     = true
-  description = "Whether to manage private DNS zone groups with this module. If set to false, you must manage private DNS zone groups externally, e.g. using Azure Policy."
   nullable    = false
 }
 

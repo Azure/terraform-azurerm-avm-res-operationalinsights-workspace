@@ -1,5 +1,5 @@
 locals {
-  module_name = "operationalinsights-workspace"
+  module_name = "avm-res-operationalinsights-workspace"
   module_type = "res"
   telem_arm_deployment_name = substr(
     format(
