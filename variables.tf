@@ -279,13 +279,6 @@ variable "private_endpoints" {
   nullable    = false
 }
 
-variable "private_endpoints_manage_dns_zone_group" {
-  type        = bool
-  default     = null
-  description = "Whether to manage private DNS zone groups with this module. If set to false, you must manage private DNS zone groups externally, e.g. using Azure Policy."
-  nullable    = false
-}
-
 variable "role_assignments" {
   type = map(object({
     role_definition_id_or_name             = string
