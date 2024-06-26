@@ -89,7 +89,13 @@ module "law" {
   log_analytics_workspace_identity = {
     type = "SystemAssigned"
   }
-  monitor_private_link_scope_name          = "law_pl"
+  monitor_private_link_scope = {
+    scope0 = {
+      name                  = "law_pl_scope"
+      ingestion_access_mode = "PrivateOnly"
+      query_access_mode     = "PrivateOnly"
+    }
+  }
   monitor_private_link_scoped_service_name = "law_pl_service"
   private_endpoints = {
     pe1 = {

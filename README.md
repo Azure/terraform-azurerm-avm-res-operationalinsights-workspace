@@ -260,57 +260,26 @@ object({
 
 Default: `null`
 
-### <a name="input_monitor_private_link_scope_ingestion_access_mode"></a> [monitor\_private\_link\_scope\_ingestion\_access\_mode](#input\_monitor\_private\_link\_scope\_ingestion\_access\_mode)
+### <a name="input_monitor_private_link_scope"></a> [monitor\_private\_link\_scope](#input\_monitor\_private\_link\_scope)
 
-Description: (Optional) The default ingestion access mode for the associated private endpoints in scope. Possible values are Open and PrivateOnly. Defaults to Open.
-
-Type: `string`
-
-Default: `null`
-
-### <a name="input_monitor_private_link_scope_name"></a> [monitor\_private\_link\_scope\_name](#input\_monitor\_private\_link\_scope\_name)
-
-Description: The name of the Azure Monitor Private Link Scope. Changing this forces a new resource to be created.
-
-Type: `string`
-
-Default: `null`
-
-### <a name="input_monitor_private_link_scope_query_access_mode"></a> [monitor\_private\_link\_scope\_query\_access\_mode](#input\_monitor\_private\_link\_scope\_query\_access\_mode)
-
-Description: (Optional) The default query access mode for hte associated private endpoints in scope. Possible values are Open and PrivateOnly. Defaults to Open.
-
-Type: `string`
-
-Default: `null`
-
-### <a name="input_monitor_private_link_scope_tags"></a> [monitor\_private\_link\_scope\_tags](#input\_monitor\_private\_link\_scope\_tags)
-
-Description: (Optional) A mapping of tags which should be assigned to the Azure Monitor Private Link Scope.
-
-Type: `map(string)`
-
-Default: `null`
-
-### <a name="input_monitor_private_link_scope_timeouts"></a> [monitor\_private\_link\_scope\_timeouts](#input\_monitor\_private\_link\_scope\_timeouts)
-
-Description: - `create` - (Defaults to 30 minutes) Used when creating the Azure Monitor Private Link Scope.
-- `delete` - (Defaults to 30 minutes) Used when deleting the Azure Monitor Private Link Scope.
-- `read` - (Defaults to 5 minutes) Used when retrieving the Azure Monitor Private Link Scope.
-- `update` - (Defaults to 30 minutes) Used when updating the Azure Monitor Private Link Scope.
+Description:   A map of objects representing Azure Monitor Private Link Scopes. Each object can contain the following attributes:
+    - ingestion\_access\_mode: (Optional) The default ingestion access mode for the associated private endpoints in scope. Possible values are 'Open' and 'PrivateOnly'. Defaults to 'Open'.
+    - name: The name of the Azure Monitor Private Link Scope. Changing this forces a new resource to be created.
+    - query\_access\_mode: (Optional) The default query access mode for the associated private endpoints in scope. Possible values are 'Open' and 'PrivateOnly'. Defaults to 'Open'.
+    - tags: (Optional) A mapping of tags which should be assigned to the Azure Monitor Private Link Scope.
 
 Type:
 
 ```hcl
-object({
-    create = optional(string)
-    delete = optional(string)
-    read   = optional(string)
-    update = optional(string)
-  })
+map(object({
+    ingestion_access_mode = optional(string, "PrivateOnly")
+    name                  = optional(string, null)
+    query_access_mode     = optional(string, "PrivateOnly")
+    tags                  = optional(map(string), null)
+  }))
 ```
 
-Default: `null`
+Default: `{}`
 
 ### <a name="input_monitor_private_link_scoped_service_name"></a> [monitor\_private\_link\_scoped\_service\_name](#input\_monitor\_private\_link\_scoped\_service\_name)
 

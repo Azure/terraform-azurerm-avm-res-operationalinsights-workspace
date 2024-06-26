@@ -208,7 +208,7 @@ variable "monitor_private_link_scope" {
     query_access_mode     = optional(string, "PrivateOnly")
     tags                  = optional(map(string), null)
   }))
-  default = {}
+  default     = {}
   description = <<EOD
   A map of objects representing Azure Monitor Private Link Scopes. Each object can contain the following attributes:
     - ingestion_access_mode: (Optional) The default ingestion access mode for the associated private endpoints in scope. Possible values are 'Open' and 'PrivateOnly'. Defaults to 'Open'.
@@ -216,7 +216,7 @@ variable "monitor_private_link_scope" {
     - query_access_mode: (Optional) The default query access mode for the associated private endpoints in scope. Possible values are 'Open' and 'PrivateOnly'. Defaults to 'Open'.
     - tags: (Optional) A mapping of tags which should be assigned to the Azure Monitor Private Link Scope.
   EOD
-  nullable = false
+  nullable    = false
 }
 
 variable "monitor_private_link_scoped_service_name" {

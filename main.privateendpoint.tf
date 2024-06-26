@@ -1,7 +1,8 @@
 # TODO remove this code & var.private_endpoints if private link is not support.  Note it must be included in this module if it is supported.
 resource "azurerm_private_endpoint" "this" {
   #for_each = { for k, v in var.private_endpoints : k => v if var.private_endpoints_manage_dns_zone_group }
-   for_each = local.private_endpoint_application_security_group_associations
+  for_each = local.private_endpoint_application_security_group_associations
+
   location                      = each.value.location != null ? each.value.location : var.location
   name                          = each.value.name != null ? each.value.name : "pep-${var.name}"
   resource_group_name           = each.value.resource_group_name != null ? each.value.resource_group_name : var.resource_group_name

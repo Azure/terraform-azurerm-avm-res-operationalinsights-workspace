@@ -77,10 +77,10 @@ module "law" {
   }
   monitor_private_link_scope = {
     scope0 = {
-      name = "law_pl_scope"
+      name                  = "law_pl_scope"
       ingestion_access_mode = "PrivateOnly"
-      query_access_mode = "PrivateOnly"
-   }
+      query_access_mode     = "PrivateOnly"
+    }
   }
   monitor_private_link_scoped_service_name = "law_pl_service"
   private_endpoints = {
