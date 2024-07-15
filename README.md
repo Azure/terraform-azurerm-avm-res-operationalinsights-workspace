@@ -14,6 +14,8 @@ The following requirements are needed by this module:
 
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 3.71)
 
+- <a name="requirement_modtm"></a> [modtm](#requirement\_modtm) (~> 0.3)
+
 - <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.5)
 
 ## Providers
@@ -22,7 +24,7 @@ The following providers are used by this module:
 
 - <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) (~> 3.71)
 
-- <a name="provider_modtm"></a> [modtm](#provider\_modtm)
+- <a name="provider_modtm"></a> [modtm](#provider\_modtm) (~> 0.3)
 
 - <a name="provider_random"></a> [random](#provider\_random) (~> 3.5)
 
@@ -38,10 +40,10 @@ The following resources are used by this module:
 - [azurerm_private_endpoint.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_endpoint) (resource)
 - [azurerm_private_endpoint_application_security_group_association.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_endpoint_application_security_group_association) (resource)
 - [azurerm_role_assignment.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/role_assignment) (resource)
-- [modtm_telemetry.telemetry](https://registry.terraform.io/providers/hashicorp/modtm/latest/docs/resources/telemetry) (resource)
+- [modtm_telemetry.telemetry](https://registry.terraform.io/providers/Azure/modtm/latest/docs/resources/telemetry) (resource)
 - [random_uuid.telemetry](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/uuid) (resource)
 - [azurerm_client_config.telemetry](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/client_config) (data source)
-- [modtm_module_source.telemetry](https://registry.terraform.io/providers/hashicorp/modtm/latest/docs/data-sources/module_source) (data source)
+- [modtm_module_source.telemetry](https://registry.terraform.io/providers/Azure/modtm/latest/docs/data-sources/module_source) (data source)
 
 <!-- markdownlint-disable MD013 -->
 ## Required Inputs
@@ -246,10 +248,10 @@ Default: `null`
 
 ### <a name="input_log_analytics_workspace_timeouts"></a> [log\_analytics\_workspace\_timeouts](#input\_log\_analytics\_workspace\_timeouts)
 
-Description: - `create` - (Defaults to 30 minutes) Used when creating the Log Analytics Workspace.
-- `delete` - (Defaults to 30 minutes) Used when deleting the Log Analytics Workspace.
-- `read` - (Defaults to 5 minutes) Used when retrieving the Log Analytics Workspace.
-- `update` - (Defaults to 30 minutes) Used when updating the Log Analytics Workspace.
+Description:  - `create` - (Defaults to 30 minutes) Used when creating the Log Analytics Workspace.
+ - `delete` - (Defaults to 30 minutes) Used when deleting the Log Analytics Workspace.
+ - `read` - (Defaults to 5 minutes) Used when retrieving the Log Analytics Workspace.
+ - `update` - (Defaults to 30 minutes) Used when updating the Log Analytics Workspace.
 
 Type:
 
@@ -284,6 +286,22 @@ map(object({
 ```
 
 Default: `{}`
+
+### <a name="input_monitor_private_link_scope_ingestion_access_mode"></a> [monitor\_private\_link\_scope\_ingestion\_access\_mode](#input\_monitor\_private\_link\_scope\_ingestion\_access\_mode)
+
+Description: (Optional) The default ingestion access mode for the associated private endpoints in scope. Possible values are 'Open' and 'PrivateOnly'.
+
+Type: `string`
+
+Default: `"PrivateOnly"`
+
+### <a name="input_monitor_private_link_scope_query_access_mode"></a> [monitor\_private\_link\_scope\_query\_access\_mode](#input\_monitor\_private\_link\_scope\_query\_access\_mode)
+
+Description: (Optional) The default query access mode for the associated private endpoints in scope. Possible values are 'Open' and 'PrivateOnly'.
+
+Type: `string`
+
+Default: `"PrivateOnly"`
 
 ### <a name="input_monitor_private_link_scoped_service_name"></a> [monitor\_private\_link\_scoped\_service\_name](#input\_monitor\_private\_link\_scoped\_service\_name)
 

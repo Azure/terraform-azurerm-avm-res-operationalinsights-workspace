@@ -87,7 +87,7 @@ module "law" {
     pe1 = {
       name                          = module.naming.private_endpoint.name_unique
       subnet_resource_id            = module.vnet.subnets["subnet0"].resource.id
-      private_dns_zone_resource_ids = [module.privatednszone.private_dnz_zone_output.id]
+      private_dns_zone_resource_ids = [module.privatednszone.resource.id]
       network_interface_name        = "nic-pe-law"
     }
   }

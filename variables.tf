@@ -193,12 +193,12 @@ variable "log_analytics_workspace_timeouts" {
     update = optional(string)
   })
   default     = null
-  description = <<-EOT
+  description = <<DESCRIPTION
  - `create` - (Defaults to 30 minutes) Used when creating the Log Analytics Workspace.
  - `delete` - (Defaults to 30 minutes) Used when deleting the Log Analytics Workspace.
  - `read` - (Defaults to 5 minutes) Used when retrieving the Log Analytics Workspace.
  - `update` - (Defaults to 30 minutes) Used when updating the Log Analytics Workspace.
-EOT
+DESCRIPTION
 }
 
 variable "monitor_private_link_scope" {
@@ -217,6 +217,18 @@ variable "monitor_private_link_scope" {
     - tags: (Optional) A mapping of tags which should be assigned to the Azure Monitor Private Link Scope.
   DESCRIPTION
   nullable    = false
+}
+
+variable "monitor_private_link_scope_ingestion_access_mode" {
+  type        = string
+  default     = "PrivateOnly"
+  description = "(Optional) The default ingestion access mode for the associated private endpoints in scope. Possible values are 'Open' and 'PrivateOnly'."
+}
+
+variable "monitor_private_link_scope_query_access_mode" {
+  type        = string
+  default     = "PrivateOnly"
+  description = "(Optional) The default query access mode for the associated private endpoints in scope. Possible values are 'Open' and 'PrivateOnly'."
 }
 
 variable "monitor_private_link_scoped_service_name" {
