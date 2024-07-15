@@ -11,7 +11,7 @@ terraform {
       version = "~> 3.5"
     }
     modtm = {
-      source  = "azure/modtm"
+      source  = "Azure/modtm"
       version = "~> 0.3"
     }
   }

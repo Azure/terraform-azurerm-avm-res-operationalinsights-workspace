@@ -193,12 +193,12 @@ variable "log_analytics_workspace_timeouts" {
     update = optional(string)
   })
   default     = null
-  description = <<-EOT
+  description = <<DESCRIPTION
  - `create` - (Defaults to 30 minutes) Used when creating the Log Analytics Workspace.
  - `delete` - (Defaults to 30 minutes) Used when deleting the Log Analytics Workspace.
  - `read` - (Defaults to 5 minutes) Used when retrieving the Log Analytics Workspace.
  - `update` - (Defaults to 30 minutes) Used when updating the Log Analytics Workspace.
-EOT
+DESCRIPTION
 }
 
 variable "monitor_private_link_scope" {
