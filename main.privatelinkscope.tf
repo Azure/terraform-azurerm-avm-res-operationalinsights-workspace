@@ -1,9 +1,11 @@
 resource "azurerm_monitor_private_link_scope" "this" {
   for_each = var.monitor_private_link_scope
 
-  name                = each.value.name != null ? each.value.name : "pl-${var.name}"
-  resource_group_name = var.resource_group_name
-  tags                = each.value.tags
+  name                  = each.value.name != null ? each.value.name : "pl-${var.name}"
+  resource_group_name   = var.resource_group_name
+  ingestion_access_mode = var.monitor_private_link_scope_ingestion_access_mode
+  query_access_mode     = var.monitor_private_link_scope_query_access_mode
+  tags                  = each.value.tags
 }
 
 resource "azurerm_monitor_private_link_scoped_service" "this" {
