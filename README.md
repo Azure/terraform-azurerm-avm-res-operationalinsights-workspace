@@ -287,6 +287,22 @@ map(object({
 
 Default: `{}`
 
+### <a name="input_monitor_private_link_scope_ingestion_access_mode"></a> [monitor\_private\_link\_scope\_ingestion\_access\_mode](#input\_monitor\_private\_link\_scope\_ingestion\_access\_mode)
+
+Description: (Optional) The default ingestion access mode for the associated private endpoints in scope. Possible values are 'Open' and 'PrivateOnly'.
+
+Type: `string`
+
+Default: `"PrivateOnly"`
+
+### <a name="input_monitor_private_link_scope_query_access_mode"></a> [monitor\_private\_link\_scope\_query\_access\_mode](#input\_monitor\_private\_link\_scope\_query\_access\_mode)
+
+Description: (Optional) The default query access mode for the associated private endpoints in scope. Possible values are 'Open' and 'PrivateOnly'.
+
+Type: `string`
+
+Default: `"PrivateOnly"`
+
 ### <a name="input_monitor_private_link_scoped_service_name"></a> [monitor\_private\_link\_scoped\_service\_name](#input\_monitor\_private\_link\_scoped\_service\_name)
 
 Description: (Required) The name of the Azure Monitor Private Link Scoped Service. Changing this forces a new resource to be created.

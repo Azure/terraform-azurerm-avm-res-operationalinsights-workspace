@@ -219,6 +219,18 @@ variable "monitor_private_link_scope" {
   nullable    = false
 }
 
+variable "monitor_private_link_scope_ingestion_access_mode" {
+  type        = string
+  default     = "PrivateOnly"
+  description = "(Optional) The default ingestion access mode for the associated private endpoints in scope. Possible values are 'Open' and 'PrivateOnly'."
+}
+
+variable "monitor_private_link_scope_query_access_mode" {
+  type        = string
+  default     = "PrivateOnly"
+  description = "(Optional) The default query access mode for the associated private endpoints in scope. Possible values are 'Open' and 'PrivateOnly'."
+}
+
 variable "monitor_private_link_scoped_service_name" {
   type        = string
   default     = null
