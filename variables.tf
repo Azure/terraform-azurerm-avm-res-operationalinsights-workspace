@@ -10,7 +10,7 @@ variable "name" {
   nullable    = false
 
   validation {
-    condition     = can(regex("^[a-z0-9-]{4,63}$", var.name))
+    condition     = can(regex("^[A-Za-z0-9-]{4,63}$", var.name))
     error_message = "The name must be a valid Log Analytics Workspace name."
   }
 }
