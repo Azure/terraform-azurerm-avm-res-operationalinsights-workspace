@@ -13,6 +13,7 @@ output "resource" {
   - module.log_analytics.resource.name
 EOT
   value       = azurerm_log_analytics_workspace.this
+  sensitive = true
 }
 
 output "resource_id" {
