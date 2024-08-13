@@ -239,10 +239,10 @@ variable "monitor_private_link_scoped_service_name" {
 
 variable "monitor_private_link_scoped_resource" {
   type = map(object({
-    parent_id = string
+    resource_id = string
   }))
   default = {}
-  description = "(Optional) Resource ID of an existing Azure Monitor Private Link Scoped Service to connect to."
+  description = "(Optional) Resource ID of an existing Azure Monitor Private Link Scope to connect to."
 }
 
 variable "private_endpoints" {
