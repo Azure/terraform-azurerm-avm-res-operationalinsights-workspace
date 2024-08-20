@@ -241,7 +241,7 @@ variable "monitor_private_link_scoped_resource" {
   type = map(object({
     resource_id = string
   }))
-  default = {}
+  default     = {}
   description = "(Optional) Resource ID of an existing Azure Monitor Private Link Scope to connect to."
 }
 
