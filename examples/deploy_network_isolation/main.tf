@@ -1,6 +1,10 @@
 terraform {
   required_version = ">= 1.3.0"
   required_providers {
+    /*azapi = {
+      source = "Azure/azapi"
+      version = ">= 1.14.0, < 2.0.0"
+    }*/
     azurerm = {
       source  = "hashicorp/azurerm"
       version = ">= 3.7.0, < 4.0.0"
@@ -54,15 +58,6 @@ module "vnet" {
   }
 }
 
-locals {
-  privatednszone = {
-    "privatelink.monitor.azure.com"             = {}
-    "privatelink.agentsvc.azure-automation.net" = {}
-    "privatelink.oms.opinsights.azure.com"      = {}
-    "privatelink.ods.opinsights.azure.com"      = {}
-    "privatelink.blob.core.windows.net"         = {}
-  }
-}
 module "privatednszone" {
   source   = "Azure/avm-res-network-privatednszone/azurerm"
   version  = "~> 0.1.2"
@@ -77,6 +72,21 @@ module "privatednszone" {
     }
   }
 }
+
+# Use data object to reference an existing Monitor Private Link Scope
+/*
+data "azurerm_resource_group" "ampls" {
+  provider = <provider.alias> # required for cross sub connection
+
+  name = "<resource group name>"
+}
+
+data "azapi_resource_id" "ampls" {
+  type      = "Microsoft.Insights/privateLinkScopes@2021-07-01-preview"
+  name      = "<monitor pls name>"
+  parent_id = data.azurerm_resource_group.ampls.id
+}
+*/
 
 # This is the module call
 module "law" {
@@ -96,7 +106,12 @@ module "law" {
   log_analytics_workspace_identity = {
     type = "SystemAssigned"
   }
-
+  # use to connect to an existing AMPLS.
+  /* 
+  monitor_private_link_scoped_resource = {
+    resource_id = data.azapi_resource_id.ampls.id
+  }
+  */
 }
 
 # sub module call
