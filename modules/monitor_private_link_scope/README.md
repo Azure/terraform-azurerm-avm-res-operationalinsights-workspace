@@ -67,12 +67,6 @@ The following resources are used by this module:
 
 The following input variables are required:
 
-### <a name="input_location"></a> [location](#input\_location)
-
-Description: (Required) Specifies the suppored Azure location where the resource should exist. Changing this forces a new resource to be created
-
-Type: `string`
-
 ### <a name="input_monitor_private_link_scope_name"></a> [monitor\_private\_link\_scope\_name](#input\_monitor\_private\_link\_scope\_name)
 
 Description: Specifies the name of the Monitor Private Link Scope. Changing this forces a new resource to be created.

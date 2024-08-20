@@ -52,7 +52,6 @@ variable "monitor_private_link_scope_query_access_mode" {
   description = "(Optional) The default query access mode for the associated private endpoints in scope. Possible values are 'Open' and 'PrivateOnly'."
 }
 
-# tflint-ignore: terraform_unused_declarations
 variable "monitor_private_link_scope_tags" {
   type        = map(string)
   default     = null
