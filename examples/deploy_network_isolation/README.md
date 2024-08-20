@@ -105,14 +105,7 @@ module "law" {
       network_interface_name        = "nic-pe-law"
     }
   }
-# Connect to an existing Azure Monitor Private Link Scope
-# monitor_private_link_scoped_resource = {
-# ampls = {
-#   resource_id = ""
-# }
-#}
 }
-
 ```
 
 <!-- markdownlint-disable MD033 -->
