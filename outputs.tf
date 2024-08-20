@@ -1,10 +1,3 @@
-output "private_endpoints" {
-  description = <<DESCRIPTION
-  A map of the private endpoints created.
-  DESCRIPTION
-  value       = azurerm_private_endpoint.this
-}
-
 output "resource" {
   description = <<-EOT
   "This is the full output for the Log Analytics resource. This is the default output for the module following AVM standards. Review the examples below for the correct output to use in your module."
