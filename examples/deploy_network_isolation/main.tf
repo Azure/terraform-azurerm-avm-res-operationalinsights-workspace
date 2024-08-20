@@ -13,7 +13,12 @@ terraform {
 }
 
 provider "azurerm" {
-  features {}
+  features {
+    resource_group {
+      prevent_deletion_if_contains_resources = false
+    }
+
+  }
 }
 
 # This ensures we have unique CAF compliant names for our resources.
@@ -49,10 +54,21 @@ module "vnet" {
   }
 }
 
+locals {
+  privatednszone = {
+    "privatelink.monitor.azure.com"             = {}
+    "privatelink.agentsvc.azure-automation.net" = {}
+    "privatelink.oms.opinsights.azure.com"      = {}
+    "privatelink.ods.opinsights.azure.com"      = {}
+    "privatelink.blob.core.windows.net"         = {}
+  }
+}
 module "privatednszone" {
-  source              = "Azure/avm-res-network-privatednszone/azurerm"
-  version             = "~> 0.1.1"
-  domain_name         = "privatelink.workspace.azure.net"
+  source   = "Azure/avm-res-network-privatednszone/azurerm"
+  version  = "~> 0.1.2"
+  for_each = local.privatednszone
+
+  domain_name         = each.key
   resource_group_name = azurerm_resource_group.this.name
   virtual_network_links = {
     vnetlink0 = {
@@ -65,30 +81,52 @@ module "privatednszone" {
 # This is the module call
 module "law" {
   source = "../../"
-  # source             = "Azure/avm-res-operationalinsights-workspace/azurerm"
-  enable_telemetry                          = var.enable_telemetry
-  location                                  = azurerm_resource_group.this.location
-  resource_group_name                       = azurerm_resource_group.this.name
-  name                                      = "thislaworkspace"
-  log_analytics_workspace_retention_in_days = 30
-  log_analytics_workspace_sku               = "PerGB2018"
+  # source = "Azure/avm-res-operationalinsights-workspace/azurerm"
+
+  enable_telemetry                                      = var.enable_telemetry
+  location                                              = azurerm_resource_group.this.location
+  resource_group_name                                   = azurerm_resource_group.this.name
+  name                                                  = "thislaworkspace"
+  log_analytics_workspace_retention_in_days             = 30
+  log_analytics_workspace_sku                           = "PerGB2018"
+  log_analytics_workspace_local_authentication_disabled = true
+  log_analytics_workspace_internet_ingestion_enabled    = false
+  log_analytics_workspace_internet_query_enabled        = false
+
   log_analytics_workspace_identity = {
     type = "SystemAssigned"
   }
-  monitor_private_link_scope = {
-    scope0 = {
-      name                  = "law_pl_scope"
-      ingestion_access_mode = "PrivateOnly"
-      query_access_mode     = "PrivateOnly"
+
+}
+
+# sub module call
+module "ampls" {
+  source = "../../modules/monitor_private_link_scope"
+
+  enable_telemetry                               = var.enable_telemetry
+  monitor_private_link_scope_name                = "law-pl-service"
+  monitor_private_link_scope_resource_group_name = azurerm_resource_group.this.name
+
+  private_endpoints = {
+    pe_01 = {
+      name               = module.naming.private_endpoint.name_unique
+      subnet_resource_id = module.vnet.subnets["subnet0"].resource.id
+      location           = azurerm_resource_group.this.location
+      private_dns_zone_resource_ids = [
+        module.privatednszone["privatelink.monitor.azure.com"].resource.id,
+        module.privatednszone["privatelink.agentsvc.azure-automation.net"].resource.id,
+        module.privatednszone["privatelink.oms.opinsights.azure.com"].resource.id,
+        module.privatednszone["privatelink.ods.opinsights.azure.com"].resource.id,
+        module.privatednszone["privatelink.blob.core.windows.net"].resource.id
+      ]
+      network_interface_name = "law-pl-service-pe-nic"
     }
   }
-  monitor_private_link_scoped_service_name = "law_pl_service"
-  private_endpoints = {
-    pe1 = {
-      name                          = module.naming.private_endpoint.name_unique
-      subnet_resource_id            = module.vnet.subnets["subnet0"].resource.id
-      private_dns_zone_resource_ids = [module.privatednszone.resource.id]
-      network_interface_name        = "nic-pe-law"
+
+  monitor_private_link_scoped_service = {
+    ampls_connect_01 = {
+      name               = module.law.resource.name
+      linked_resource_id = module.law.resource_id
     }
   }
 }
