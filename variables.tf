@@ -207,7 +207,10 @@ variable "monitor_private_link_scoped_resource" {
     resource_id = string
   }))
   default     = {}
-  description = "(Optional) Resource ID of an existing Azure Monitor Private Link Scope to connect to."
+  description = <<DESCRIPTION
+ - `name` - Defaults to the name of the Log Analytics Workspace.
+ - `resource_id` - Resource ID of an existing Monitor Private Link Scope to connect to.
+DESCRIPTION
 }
 
 variable "role_assignments" {
