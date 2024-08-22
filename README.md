@@ -12,6 +12,8 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (~> 1.5)
 
+- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 1.14)
+
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 3.71)
 
 - <a name="requirement_modtm"></a> [modtm](#requirement\_modtm) (~> 0.3)
@@ -22,6 +24,7 @@ The following requirements are needed by this module:
 
 The following resources are used by this module:
 
+- [azapi_resource.ampls](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azurerm_log_analytics_workspace.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/log_analytics_workspace) (resource)
 - [azurerm_management_lock.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/management_lock) (resource)
 - [azurerm_monitor_diagnostic_setting.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/monitor_diagnostic_setting) (resource)
@@ -292,6 +295,22 @@ Description: (Optional) The default query access mode for the associated private
 Type: `string`
 
 Default: `"PrivateOnly"`
+
+### <a name="input_monitor_private_link_scoped_resource"></a> [monitor\_private\_link\_scoped\_resource](#input\_monitor\_private\_link\_scoped\_resource)
+
+Description:  - `name` - Defaults to the name of the Log Analytics Workspace.
+ - `resource_id` - Resource ID of an existing Monitor Private Link Scope to connect to.
+
+Type:
+
+```hcl
+map(object({
+    name        = optional(string)
+    resource_id = string
+  }))
+```
+
+Default: `{}`
 
 ### <a name="input_monitor_private_link_scoped_service_name"></a> [monitor\_private\_link\_scoped\_service\_name](#input\_monitor\_private\_link\_scoped\_service\_name)
 
