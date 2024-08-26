@@ -231,6 +231,18 @@ variable "monitor_private_link_scope_query_access_mode" {
   description = "(Optional) The default query access mode for the associated private endpoints in scope. Possible values are 'Open' and 'PrivateOnly'."
 }
 
+variable "monitor_private_link_scoped_resource" {
+  type = map(object({
+    name        = optional(string)
+    resource_id = string
+  }))
+  default     = {}
+  description = <<DESCRIPTION
+ - `name` - Defaults to the name of the Log Analytics Workspace.
+ - `resource_id` - Resource ID of an existing Monitor Private Link Scope to connect to.
+DESCRIPTION
+}
+
 variable "monitor_private_link_scoped_service_name" {
   type        = string
   default     = null
