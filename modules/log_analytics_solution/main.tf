@@ -8,6 +8,7 @@ resource "azurerm_log_analytics_solution" "this" {
 
   dynamic "plan" {
     for_each = [var.log_analytics_solution_plan]
+
     content {
       product        = plan.value.product
       publisher      = plan.value.publisher
@@ -16,6 +17,7 @@ resource "azurerm_log_analytics_solution" "this" {
   }
   dynamic "timeouts" {
     for_each = var.log_analytics_solution_timeouts == null ? [] : [var.log_analytics_solution_timeouts]
+
     content {
       create = timeouts.value.create
       delete = timeouts.value.delete

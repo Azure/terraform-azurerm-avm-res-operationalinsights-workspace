@@ -15,6 +15,7 @@ resource "azurerm_log_analytics_workspace" "this" {
 
   dynamic "identity" {
     for_each = var.log_analytics_workspace_identity == null ? [] : [var.log_analytics_workspace_identity]
+
     content {
       type         = identity.value.type
       identity_ids = identity.value.identity_ids
@@ -22,6 +23,7 @@ resource "azurerm_log_analytics_workspace" "this" {
   }
   dynamic "timeouts" {
     for_each = var.log_analytics_workspace_timeouts == null ? [] : [var.log_analytics_workspace_timeouts]
+
     content {
       create = timeouts.value.create
       delete = timeouts.value.delete
