@@ -203,38 +203,21 @@ DESCRIPTION
 
 variable "monitor_private_link_scope" {
   type = map(object({
-    ingestion_access_mode = optional(string, "PrivateOnly")
-    name                  = optional(string, null)
-    query_access_mode     = optional(string, "PrivateOnly")
-    tags                  = optional(map(string), null)
+    name = optional(string)
+    resource_id = string
   }))
   default     = {}
   description = <<DESCRIPTION
-  A map of objects representing Azure Monitor Private Link Scopes. Each object can contain the following attributes:
-    - ingestion_access_mode: (Optional) The default ingestion access mode for the associated private endpoints in scope. Possible values are 'Open' and 'PrivateOnly'. Defaults to 'Open'.
-    - name: The name of the Azure Monitor Private Link Scope. Changing this forces a new resource to be created.
-    - query_access_mode: (Optional) The default query access mode for the associated private endpoints in scope. Possible values are 'Open' and 'PrivateOnly'. Defaults to 'Open'.
-    - tags: (Optional) A mapping of tags which should be assigned to the Azure Monitor Private Link Scope.
+  
   DESCRIPTION
   nullable    = false
-}
-
-variable "monitor_private_link_scope_ingestion_access_mode" {
-  type        = string
-  default     = "PrivateOnly"
-  description = "(Optional) The default ingestion access mode for the associated private endpoints in scope. Possible values are 'Open' and 'PrivateOnly'."
-}
-
-variable "monitor_private_link_scope_query_access_mode" {
-  type        = string
-  default     = "PrivateOnly"
-  description = "(Optional) The default query access mode for the associated private endpoints in scope. Possible values are 'Open' and 'PrivateOnly'."
 }
 
 variable "monitor_private_link_scoped_resource" {
   type = map(object({
     name        = optional(string)
     resource_id = string
+    location    = optional(string)
   }))
   default     = {}
   description = <<DESCRIPTION
@@ -338,3 +321,10 @@ variable "tags" {
   default     = null
   description = "(Optional) Tags of the resource."
 }
+
+  variable "private_endpoints_manage_dns_zone_group" {
+    type        = bool
+    default     = true
+    nullable    = false
+    description = "Whether to manage private DNS zone groups with this module. If set to false, you must manage private DNS zone groups externally, e.g. using Azure Policy."
+  }
