@@ -9,7 +9,5 @@ locals {
     "southcentralus",
     "northcentralus",
     "centralus",
-    "eastasia",
-    "southeastasia",
   ]
 }

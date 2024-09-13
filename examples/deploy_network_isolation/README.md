@@ -100,6 +100,9 @@ module "law" {
     pe1 = {
       subnet_resource_id            = azurerm_subnet.this.id
       private_dns_zone_resource_ids = [module.privatednszone.resource.id]
+      subnet_id                     = azurerm_subnet.this.id
+      network_interface_name        = "law_pe_nic"
+
     }
   }
 }
