@@ -217,7 +217,6 @@ variable "monitor_private_link_scoped_resource" {
   type = map(object({
     name        = optional(string)
     resource_id = string
-    location    = optional(string)
   }))
   default     = {}
   description = <<DESCRIPTION

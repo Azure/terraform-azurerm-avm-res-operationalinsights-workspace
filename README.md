@@ -285,7 +285,6 @@ Type:
 map(object({
     name        = optional(string)
     resource_id = string
-    location    = optional(string)
   }))
 ```
 
