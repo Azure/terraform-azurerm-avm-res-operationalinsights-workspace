@@ -76,9 +76,9 @@ module "law" {
   }
   monitor_private_link_scope = {
     pl1 = {
-      name       = "law_pl_scope"
+      name        = "law_pl_scope"
       resource_id = azurerm_resource_group.this.id
-      location   =  azurerm_resource_group.this.location
+      location    = azurerm_resource_group.this.location
     }
   }
   monitor_private_link_scoped_service_name = "law_pl_service"

@@ -12,26 +12,26 @@ resource "azapi_resource" "amplscope" {
   for_each = var.monitor_private_link_scope
 
   type = "microsoft.insights/privateLinkScopes@2021-07-01-preview"
-  name = each.value.name != null ? each.value.name : "law_pl_scope"
-  location = var.location
-  parent_id = each.value.resource_id
-  tags = var.tags
   body = jsonencode({
     properties = {
       accessModeSettings = {
         exclusions = [
           {
-            ingestionAccessMode = "PrivateOnly"
+            ingestionAccessMode           = "PrivateOnly"
             privateEndpointConnectionName = "azurerm_private_endpoint.this.private_service_connection.name"
-            queryAccessMode = "PrivateOnly"
+            queryAccessMode               = "PrivateOnly"
           }
         ]
         ingestionAccessMode = "PrivateOnly"
-        queryAccessMode = "PrivateOnly"
+        queryAccessMode     = "PrivateOnly"
       }
     }
   })
+  location                  = var.location
+  name                      = each.value.name != null ? each.value.name : "law_pl_scope"
+  parent_id                 = each.value.resource_id
   schema_validation_enabled = false
+  tags                      = var.tags
 }
 
 resource "azapi_resource" "ampls" {

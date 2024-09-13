@@ -48,19 +48,18 @@ resource "azurerm_resource_group" "this" {
   name     = module.naming.resource_group.name_unique
 }
 
-module "vnet" {
-  source              = "Azure/avm-res-network-virtualnetwork/azurerm"
-  version             = "~> 0.2.3"
+resource "azurerm_virtual_network" "this" {
+  address_space       = ["192.168.0.0/24"]
+  location            = azurerm_resource_group.this.location
   name                = module.naming.virtual_network.name_unique
   resource_group_name = azurerm_resource_group.this.name
-  location            = azurerm_resource_group.this.location
-  address_space       = ["10.0.0.0/16"]
-  subnets = {
-    subnet0 = {
-      name             = module.naming.subnet.name_unique
-      address_prefixes = ["10.0.0.0/24"]
-    }
-  }
+}
+
+resource "azurerm_subnet" "this" {
+  address_prefixes     = ["192.168.0.0/24"]
+  name                 = module.naming.subnet.name_unique
+  resource_group_name  = azurerm_resource_group.this.name
+  virtual_network_name = azurerm_virtual_network.this.name
 }
 
 module "privatednszone" {
@@ -71,7 +70,7 @@ module "privatednszone" {
   virtual_network_links = {
     vnetlink0 = {
       vnetlinkname = "dnslinktovnet"
-      vnetid       = module.vnet.resource.id
+      vnetid       = azurerm_virtual_network.this.id
     }
   }
 }
@@ -90,22 +89,21 @@ module "law" {
     type = "SystemAssigned"
   }
   monitor_private_link_scope = {
-    scope0 = {
-      name                  = "law_pl_scope"
-      ingestion_access_mode = "PrivateOnly"
-      query_access_mode     = "PrivateOnly"
+    pl1 = {
+      name        = "law_pl_scope"
+      resource_id = azurerm_resource_group.this.id
+      location    = azurerm_resource_group.this.location
     }
   }
   monitor_private_link_scoped_service_name = "law_pl_service"
   private_endpoints = {
     pe1 = {
-      name                          = module.naming.private_endpoint.name_unique
-      subnet_resource_id            = module.vnet.subnets["subnet0"].resource.id
+      subnet_resource_id            = azurerm_subnet.this.id
       private_dns_zone_resource_ids = [module.privatednszone.resource.id]
-      network_interface_name        = "nic-pe-law"
     }
   }
 }
+
 ```
 
 <!-- markdownlint-disable MD033 -->
@@ -124,6 +122,8 @@ The following requirements are needed by this module:
 The following resources are used by this module:
 
 - [azurerm_resource_group.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
+- [azurerm_subnet.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
+- [azurerm_virtual_network.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_network) (resource)
 - [random_integer.region_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
 
 <!-- markdownlint-disable MD013 -->
@@ -170,12 +170,6 @@ Version: 0.3.0
 Source: Azure/avm-res-network-privatednszone/azurerm
 
 Version: ~> 0.1.1
-
-### <a name="module_vnet"></a> [vnet](#module\_vnet)
-
-Source: Azure/avm-res-network-virtualnetwork/azurerm
-
-Version: ~> 0.2.3
 
 <!-- markdownlint-disable-next-line MD041 -->
 ## Data Collection
