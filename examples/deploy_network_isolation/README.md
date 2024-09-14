@@ -23,11 +23,24 @@ terraform {
       source  = "hashicorp/random"
       version = ">= 3.5.0, < 4.0.0"
     }
+    azapi = {
+      source  = "Azure/azapi"
+      version = ">= 1.15.0, < 2.0.0"
+    }
   }
 }
 
 provider "azurerm" {
-  features {}
+  features {
+    resource_group {
+      prevent_deletion_if_contains_resources = true
+    }
+  }
+}
+
+provider "azapi" {
+  use_cli = true
+  use_msi = false
 }
 
 # This ensures we have unique CAF compliant names for our resources.
@@ -89,7 +102,7 @@ module "law" {
     type = "SystemAssigned"
   }
   monitor_private_link_scope = {
-    pl1 = {
+    pe1 = {
       name        = "law_pl_scope"
       resource_id = azurerm_resource_group.this.id
     }
@@ -97,11 +110,9 @@ module "law" {
   monitor_private_link_scoped_service_name = "law_pl_service"
   private_endpoints = {
     pe1 = {
-      subnet_resource_id            = azurerm_subnet.this.id
-      private_dns_zone_resource_ids = [module.privatednszone.resource.id]
-      subnet_id                     = azurerm_subnet.this.id
-      network_interface_name        = "law_pe_nic"
-
+      subnet_resource_id          = azurerm_subnet.this.id
+      network_interface_name      = "nic1"
+      private_dns_zone_group_name = "dnslinktovnet"
     }
   }
 }
@@ -114,6 +125,8 @@ module "law" {
 The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.3.0)
+
+- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (>= 1.15.0, < 2.0.0)
 
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.7.0, < 4.0.0)
 

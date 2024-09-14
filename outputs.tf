@@ -1,3 +1,7 @@
+output "ampls" {
+  value = { for k, v in azapi_resource.ampls : k => v.id }
+}
+
 output "private_endpoints" {
   description = <<DESCRIPTION
   A map of the private endpoints created.

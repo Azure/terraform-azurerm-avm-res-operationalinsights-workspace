@@ -228,7 +228,7 @@ DESCRIPTION
 variable "monitor_private_link_scoped_service_name" {
   type        = string
   default     = null
-  description = "(Required) The name of the Azure Monitor Private Link Scoped Service. Changing this forces a new resource to be created."
+  description = "The name of the service to connect to the Monitor Private Link Scope."
 }
 
 variable "private_endpoints" {
@@ -282,6 +282,13 @@ variable "private_endpoints" {
     - `name` - The name of the IP configuration.
     - `private_ip_address` - The private IP address of the IP configuration.
   DESCRIPTION
+  nullable    = false
+}
+
+variable "private_endpoints_manage_dns_zone_group" {
+  type        = bool
+  default     = true
+  description = "Whether to manage private DNS zone groups with this module. If set to false, you must manage private DNS zone groups externally, e.g. using Azure Policy."
   nullable    = false
 }
 

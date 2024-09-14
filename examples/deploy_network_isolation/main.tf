@@ -9,11 +9,24 @@ terraform {
       source  = "hashicorp/random"
       version = ">= 3.5.0, < 4.0.0"
     }
+    azapi = {
+      source  = "Azure/azapi"
+      version = ">= 1.15.0, < 2.0.0"
+    }
   }
 }
 
 provider "azurerm" {
-  features {}
+  features {
+    resource_group {
+      prevent_deletion_if_contains_resources = true
+    }
+  }
+}
+
+provider "azapi" {
+  use_cli = true
+  use_msi = false
 }
 
 # This ensures we have unique CAF compliant names for our resources.
@@ -75,7 +88,7 @@ module "law" {
     type = "SystemAssigned"
   }
   monitor_private_link_scope = {
-    pl1 = {
+    pe1 = {
       name        = "law_pl_scope"
       resource_id = azurerm_resource_group.this.id
     }
@@ -83,11 +96,9 @@ module "law" {
   monitor_private_link_scoped_service_name = "law_pl_service"
   private_endpoints = {
     pe1 = {
-      subnet_resource_id            = azurerm_subnet.this.id
-      private_dns_zone_resource_ids = [module.privatednszone.resource.id]
-      subnet_id                     = azurerm_subnet.this.id
-      network_interface_name        = "law_pe_nic"
-
+      subnet_resource_id          = azurerm_subnet.this.id
+      network_interface_name      = "nic1"
+      private_dns_zone_group_name = "dnslinktovnet"
     }
   }
 }
