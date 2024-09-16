@@ -1,7 +1,6 @@
 # TODO remove this code & var.private_endpoints if private link is not support.  Note it must be included in this module if it is supported.
 resource "azurerm_private_endpoint" "this" {
-  #for_each = { for k, v in var.private_endpoints : k => v if var.private_endpoints_manage_dns_zone_group }
-  for_each = local.private_endpoint_application_security_group_associations
+  for_each = { for k, v in var.private_endpoints : k => v if var.private_endpoints_manage_dns_zone_group }
 
   location                      = each.value.location != null ? each.value.location : var.location
   name                          = each.value.name != null ? each.value.name : "pep-${var.name}"
@@ -13,8 +12,8 @@ resource "azurerm_private_endpoint" "this" {
   private_service_connection {
     is_manual_connection           = false
     name                           = each.value.private_service_connection_name != null ? each.value.private_service_connection_name : "pse-${var.name}"
-    private_connection_resource_id = azurerm_monitor_private_link_scope.this[each.value.pl_key].id
-    subresource_names              = ["each.value.azuremonitor"] # map to each.value.subresource_name if there are multiple services.
+    private_connection_resource_id = azapi_resource.amplscope[each.key].id
+    subresource_names              = ["azuremonitor"] # map to each.value.subresource_name if there are multiple services.
   }
   dynamic "ip_configuration" {
     for_each = each.value.ip_configurations

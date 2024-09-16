@@ -1,19 +1,33 @@
 terraform {
-  required_version = ">= 1.3.0"
+  required_version = "~> 1.5"
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = ">= 3.7.0, < 4.0.0"
+      version = ">= 3.71, < 5.0.0"
     }
     random = {
       source  = "hashicorp/random"
-      version = ">= 3.5.0, < 4.0.0"
+      version = "~> 3.5"
+    }
+    azapi = {
+      source  = "Azure/azapi"
+      version = ">= 1.15.0, < 2.0.0"
     }
   }
 }
 
 provider "azurerm" {
-  features {}
+  #subscription_id = "xxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+  features {
+    resource_group {
+      prevent_deletion_if_contains_resources = true
+    }
+  }
+}
+
+provider "azapi" {
+  use_cli = true
+  use_msi = false
 }
 
 # This ensures we have unique CAF compliant names for our resources.
@@ -34,19 +48,18 @@ resource "azurerm_resource_group" "this" {
   name     = module.naming.resource_group.name_unique
 }
 
-module "vnet" {
-  source              = "Azure/avm-res-network-virtualnetwork/azurerm"
-  version             = "~> 0.2.3"
+resource "azurerm_virtual_network" "this" {
+  address_space       = ["192.168.0.0/24"]
+  location            = azurerm_resource_group.this.location
   name                = module.naming.virtual_network.name_unique
   resource_group_name = azurerm_resource_group.this.name
-  location            = azurerm_resource_group.this.location
-  address_space       = ["10.0.0.0/16"]
-  subnets = {
-    subnet0 = {
-      name             = module.naming.subnet.name_unique
-      address_prefixes = ["10.0.0.0/24"]
-    }
-  }
+}
+
+resource "azurerm_subnet" "this" {
+  address_prefixes     = ["192.168.0.0/24"]
+  name                 = module.naming.subnet.name_unique
+  resource_group_name  = azurerm_resource_group.this.name
+  virtual_network_name = azurerm_virtual_network.this.name
 }
 
 module "privatednszone" {
@@ -57,7 +70,7 @@ module "privatednszone" {
   virtual_network_links = {
     vnetlink0 = {
       vnetlinkname = "dnslinktovnet"
-      vnetid       = module.vnet.resource.id
+      vnetid       = azurerm_virtual_network.this.id
     }
   }
 }
@@ -76,19 +89,18 @@ module "law" {
     type = "SystemAssigned"
   }
   monitor_private_link_scope = {
-    scope0 = {
-      name                  = "law_pl_scope"
-      ingestion_access_mode = "PrivateOnly"
-      query_access_mode     = "PrivateOnly"
+    pe1 = {
+      name        = "law_pl_scope"
+      resource_id = azurerm_resource_group.this.id
     }
   }
   monitor_private_link_scoped_service_name = "law_pl_service"
   private_endpoints = {
     pe1 = {
-      name                          = module.naming.private_endpoint.name_unique
-      subnet_resource_id            = module.vnet.subnets["subnet0"].resource.id
-      private_dns_zone_resource_ids = [module.privatednszone.resource.id]
-      network_interface_name        = "nic-pe-law"
+      subnet_resource_id          = azurerm_subnet.this.id
+      network_interface_name      = "nic1"
+      private_dns_zone_group_name = "dnslinktovnet"
     }
   }
 }
+

@@ -12,9 +12,9 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (~> 1.5)
 
-- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 1.14)
+- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 1.15)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 3.71)
+- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.71, < 5.0.0)
 
 - <a name="requirement_modtm"></a> [modtm](#requirement\_modtm) (~> 0.3)
 
@@ -25,10 +25,10 @@ The following requirements are needed by this module:
 The following resources are used by this module:
 
 - [azapi_resource.ampls](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.amplscope](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azurerm_log_analytics_workspace.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/log_analytics_workspace) (resource)
 - [azurerm_management_lock.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/management_lock) (resource)
 - [azurerm_monitor_diagnostic_setting.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/monitor_diagnostic_setting) (resource)
-- [azurerm_monitor_private_link_scope.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/monitor_private_link_scope) (resource)
 - [azurerm_monitor_private_link_scoped_service.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/monitor_private_link_scoped_service) (resource)
 - [azurerm_private_endpoint.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_endpoint) (resource)
 - [azurerm_private_endpoint_application_security_group_association.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_endpoint_application_security_group_association) (resource)
@@ -261,40 +261,18 @@ Default: `null`
 
 ### <a name="input_monitor_private_link_scope"></a> [monitor\_private\_link\_scope](#input\_monitor\_private\_link\_scope)
 
-Description:   A map of objects representing Azure Monitor Private Link Scopes. Each object can contain the following attributes:
-    - ingestion\_access\_mode: (Optional) The default ingestion access mode for the associated private endpoints in scope. Possible values are 'Open' and 'PrivateOnly'. Defaults to 'Open'.
-    - name: The name of the Azure Monitor Private Link Scope. Changing this forces a new resource to be created.
-    - query\_access\_mode: (Optional) The default query access mode for the associated private endpoints in scope. Possible values are 'Open' and 'PrivateOnly'. Defaults to 'Open'.
-    - tags: (Optional) A mapping of tags which should be assigned to the Azure Monitor Private Link Scope.
+Description:   
 
 Type:
 
 ```hcl
 map(object({
-    ingestion_access_mode = optional(string, "PrivateOnly")
-    name                  = optional(string, null)
-    query_access_mode     = optional(string, "PrivateOnly")
-    tags                  = optional(map(string), null)
+    name        = optional(string)
+    resource_id = string
   }))
 ```
 
 Default: `{}`
-
-### <a name="input_monitor_private_link_scope_ingestion_access_mode"></a> [monitor\_private\_link\_scope\_ingestion\_access\_mode](#input\_monitor\_private\_link\_scope\_ingestion\_access\_mode)
-
-Description: (Optional) The default ingestion access mode for the associated private endpoints in scope. Possible values are 'Open' and 'PrivateOnly'.
-
-Type: `string`
-
-Default: `"PrivateOnly"`
-
-### <a name="input_monitor_private_link_scope_query_access_mode"></a> [monitor\_private\_link\_scope\_query\_access\_mode](#input\_monitor\_private\_link\_scope\_query\_access\_mode)
-
-Description: (Optional) The default query access mode for the associated private endpoints in scope. Possible values are 'Open' and 'PrivateOnly'.
-
-Type: `string`
-
-Default: `"PrivateOnly"`
 
 ### <a name="input_monitor_private_link_scoped_resource"></a> [monitor\_private\_link\_scoped\_resource](#input\_monitor\_private\_link\_scoped\_resource)
 
@@ -314,7 +292,7 @@ Default: `{}`
 
 ### <a name="input_monitor_private_link_scoped_service_name"></a> [monitor\_private\_link\_scoped\_service\_name](#input\_monitor\_private\_link\_scoped\_service\_name)
 
-Description: (Required) The name of the Azure Monitor Private Link Scoped Service. Changing this forces a new resource to be created.
+Description: The name of the service to connect to the Monitor Private Link Scope.
 
 Type: `string`
 
@@ -376,6 +354,14 @@ map(object({
 ```
 
 Default: `{}`
+
+### <a name="input_private_endpoints_manage_dns_zone_group"></a> [private\_endpoints\_manage\_dns\_zone\_group](#input\_private\_endpoints\_manage\_dns\_zone\_group)
+
+Description: Whether to manage private DNS zone groups with this module. If set to false, you must manage private DNS zone groups externally, e.g. using Azure Policy.
+
+Type: `bool`
+
+Default: `true`
 
 ### <a name="input_role_assignments"></a> [role\_assignments](#input\_role\_assignments)
 

@@ -13,21 +13,35 @@ This examples deploys network isolation with log analytics workspace using Priva
 
 ```hcl
 terraform {
-  required_version = ">= 1.3.0"
+  required_version = "~> 1.5"
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = ">= 3.7.0, < 4.0.0"
+      version = ">= 3.71, < 5.0.0"
     }
     random = {
       source  = "hashicorp/random"
-      version = ">= 3.5.0, < 4.0.0"
+      version = "~> 3.5"
+    }
+    azapi = {
+      source  = "Azure/azapi"
+      version = ">= 1.15.0, < 2.0.0"
     }
   }
 }
 
 provider "azurerm" {
-  features {}
+  #subscription_id = "xxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+  features {
+    resource_group {
+      prevent_deletion_if_contains_resources = true
+    }
+  }
+}
+
+provider "azapi" {
+  use_cli = true
+  use_msi = false
 }
 
 # This ensures we have unique CAF compliant names for our resources.
@@ -48,19 +62,18 @@ resource "azurerm_resource_group" "this" {
   name     = module.naming.resource_group.name_unique
 }
 
-module "vnet" {
-  source              = "Azure/avm-res-network-virtualnetwork/azurerm"
-  version             = "~> 0.2.3"
+resource "azurerm_virtual_network" "this" {
+  address_space       = ["192.168.0.0/24"]
+  location            = azurerm_resource_group.this.location
   name                = module.naming.virtual_network.name_unique
   resource_group_name = azurerm_resource_group.this.name
-  location            = azurerm_resource_group.this.location
-  address_space       = ["10.0.0.0/16"]
-  subnets = {
-    subnet0 = {
-      name             = module.naming.subnet.name_unique
-      address_prefixes = ["10.0.0.0/24"]
-    }
-  }
+}
+
+resource "azurerm_subnet" "this" {
+  address_prefixes     = ["192.168.0.0/24"]
+  name                 = module.naming.subnet.name_unique
+  resource_group_name  = azurerm_resource_group.this.name
+  virtual_network_name = azurerm_virtual_network.this.name
 }
 
 module "privatednszone" {
@@ -71,7 +84,7 @@ module "privatednszone" {
   virtual_network_links = {
     vnetlink0 = {
       vnetlinkname = "dnslinktovnet"
-      vnetid       = module.vnet.resource.id
+      vnetid       = azurerm_virtual_network.this.id
     }
   }
 }
@@ -90,22 +103,21 @@ module "law" {
     type = "SystemAssigned"
   }
   monitor_private_link_scope = {
-    scope0 = {
-      name                  = "law_pl_scope"
-      ingestion_access_mode = "PrivateOnly"
-      query_access_mode     = "PrivateOnly"
+    pe1 = {
+      name        = "law_pl_scope"
+      resource_id = azurerm_resource_group.this.id
     }
   }
   monitor_private_link_scoped_service_name = "law_pl_service"
   private_endpoints = {
     pe1 = {
-      name                          = module.naming.private_endpoint.name_unique
-      subnet_resource_id            = module.vnet.subnets["subnet0"].resource.id
-      private_dns_zone_resource_ids = [module.privatednszone.resource.id]
-      network_interface_name        = "nic-pe-law"
+      subnet_resource_id          = azurerm_subnet.this.id
+      network_interface_name      = "nic1"
+      private_dns_zone_group_name = "dnslinktovnet"
     }
   }
 }
+
 ```
 
 <!-- markdownlint-disable MD033 -->
@@ -113,17 +125,21 @@ module "law" {
 
 The following requirements are needed by this module:
 
-- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.3.0)
+- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (~> 1.5)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.7.0, < 4.0.0)
+- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (>= 1.15.0, < 2.0.0)
 
-- <a name="requirement_random"></a> [random](#requirement\_random) (>= 3.5.0, < 4.0.0)
+- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.71, < 5.0.0)
+
+- <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.5)
 
 ## Resources
 
 The following resources are used by this module:
 
 - [azurerm_resource_group.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
+- [azurerm_subnet.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
+- [azurerm_virtual_network.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_network) (resource)
 - [random_integer.region_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
 
 <!-- markdownlint-disable MD013 -->
@@ -170,12 +186,6 @@ Version: 0.3.0
 Source: Azure/avm-res-network-privatednszone/azurerm
 
 Version: ~> 0.1.1
-
-### <a name="module_vnet"></a> [vnet](#module\_vnet)
-
-Source: Azure/avm-res-network-virtualnetwork/azurerm
-
-Version: ~> 0.2.3
 
 <!-- markdownlint-disable-next-line MD041 -->
 ## Data Collection
