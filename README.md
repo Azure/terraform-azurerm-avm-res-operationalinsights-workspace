@@ -407,10 +407,6 @@ Default: `null`
 
 The following outputs are exported:
 
-### <a name="output_ampls"></a> [ampls](#output\_ampls)
-
-Description: n/a
-
 ### <a name="output_private_endpoints"></a> [private\_endpoints](#output\_private\_endpoints)
 
 Description:   A map of the private endpoints created.

@@ -30,8 +30,6 @@ resource "random_integer" "region_index" {
   min = 0
 }
 
-data "azurerm_client_config" "this" {}
-
 # This is required for resource modules
 resource "azurerm_resource_group" "rg" {
   location = local.azure_regions[random_integer.region_index.result]

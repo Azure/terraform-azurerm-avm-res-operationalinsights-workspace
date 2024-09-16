@@ -36,8 +36,6 @@ resource "random_integer" "region_index" {
   min = 0
 }
 
-data "azurerm_client_config" "this" {}
-
 # This is required for resource modules
 resource "azurerm_resource_group" "rg" {
   location = local.azure_regions[random_integer.region_index.result]
@@ -77,7 +75,6 @@ The following resources are used by this module:
 
 - [azurerm_resource_group.rg](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [random_integer.region_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
-- [azurerm_client_config.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/client_config) (data source)
 
 <!-- markdownlint-disable MD013 -->
 ## Required Inputs
