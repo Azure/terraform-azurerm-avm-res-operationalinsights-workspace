@@ -31,7 +31,7 @@ terraform {
 }
 
 provider "azurerm" {
-  subscription_id = "xxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+  #subscription_id = "xxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
   features {
     resource_group {
       prevent_deletion_if_contains_resources = true
