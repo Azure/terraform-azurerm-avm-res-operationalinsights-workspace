@@ -15,6 +15,10 @@ This examples deploys network isolation with log analytics workspace using Priva
 terraform {
   required_version = "~> 1.5"
   required_providers {
+    azapi = {
+      source  = "Azure/azapi"
+      version = "~> 2.0"
+    }
     azurerm = {
       source  = "hashicorp/azurerm"
       version = ">= 3.71, < 5.0.0"
@@ -22,10 +26,6 @@ terraform {
     random = {
       source  = "hashicorp/random"
       version = "~> 3.5"
-    }
-    azapi = {
-      source  = "Azure/azapi"
-      version = ">= 1.15.0, < 2.0.0"
     }
   }
 }
@@ -116,6 +116,7 @@ module "law" {
       private_dns_zone_group_name = "dnslinktovnet"
     }
   }
+
 }
 
 ```
@@ -127,7 +128,7 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (~> 1.5)
 
-- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (>= 1.15.0, < 2.0.0)
+- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.0)
 
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.71, < 5.0.0)
 
