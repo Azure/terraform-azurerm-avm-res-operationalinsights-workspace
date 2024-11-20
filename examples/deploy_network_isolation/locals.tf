@@ -4,9 +4,8 @@ locals {
     "northeurope",
     "eastus",
     "eastus2",
-    "westus",
+    "westus3",
     "westus2",
-    "southcentralus",
     "northcentralus",
     "centralus",
   ]

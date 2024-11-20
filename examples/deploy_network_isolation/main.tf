@@ -11,7 +11,7 @@ terraform {
     }
     azapi = {
       source  = "Azure/azapi"
-      version = ">= 1.15.0, < 2.0.0"
+      version = "~> 2.0"
     }
   }
 }
@@ -102,5 +102,6 @@ module "law" {
       private_dns_zone_group_name = "dnslinktovnet"
     }
   }
+  
 }
 
