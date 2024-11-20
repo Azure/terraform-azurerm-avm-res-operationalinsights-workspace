@@ -12,7 +12,7 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (~> 1.5)
 
-- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 1.15)
+- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.0)
 
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.71, < 5.0.0)
 
@@ -193,19 +193,19 @@ Default: `null`
 
 ### <a name="input_log_analytics_workspace_internet_ingestion_enabled"></a> [log\_analytics\_workspace\_internet\_ingestion\_enabled](#input\_log\_analytics\_workspace\_internet\_ingestion\_enabled)
 
-Description: (Optional) Should the Log Analytics Workspace support ingestion over the Public Internet? Defaults to `true`.
+Description: (Required) Should the Log Analytics Workspace support ingestion over the Public Internet? Defaults to `False`.
 
 Type: `bool`
 
-Default: `null`
+Default: `"false"`
 
 ### <a name="input_log_analytics_workspace_internet_query_enabled"></a> [log\_analytics\_workspace\_internet\_query\_enabled](#input\_log\_analytics\_workspace\_internet\_query\_enabled)
 
-Description: (Optional) Should the Log Analytics Workspace support querying over the Public Internet? Defaults to `true`.
+Description: (Required) Should the Log Analytics Workspace support querying over the Public Internet? Defaults to `False`.
 
 Type: `bool`
 
-Default: `null`
+Default: `"false"`
 
 ### <a name="input_log_analytics_workspace_local_authentication_disabled"></a> [log\_analytics\_workspace\_local\_authentication\_disabled](#input\_log\_analytics\_workspace\_local\_authentication\_disabled)
 
