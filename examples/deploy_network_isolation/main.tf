@@ -1,5 +1,6 @@
 terraform {
   required_version = "~> 1.5"
+
   required_providers {
     azapi = {
       source  = "Azure/azapi"
@@ -49,10 +50,10 @@ resource "azurerm_resource_group" "this" {
 }
 
 resource "azurerm_virtual_network" "this" {
-  address_space       = ["192.168.0.0/24"]
   location            = azurerm_resource_group.this.location
   name                = module.naming.virtual_network.name_unique
   resource_group_name = azurerm_resource_group.this.name
+  address_space       = ["192.168.0.0/24"]
 }
 
 resource "azurerm_subnet" "this" {
@@ -63,8 +64,9 @@ resource "azurerm_subnet" "this" {
 }
 
 module "privatednszone" {
-  source              = "Azure/avm-res-network-privatednszone/azurerm"
-  version             = "~> 0.1.1"
+  source  = "Azure/avm-res-network-privatednszone/azurerm"
+  version = "~> 0.1.1"
+
   domain_name         = "privatelink.monitor.azure.com"
   resource_group_name = azurerm_resource_group.this.name
   virtual_network_links = {
@@ -78,16 +80,17 @@ module "privatednszone" {
 # This is the module call
 module "law" {
   source = "../../"
+
+  location            = azurerm_resource_group.this.location
+  name                = "thislaworkspace"
+  resource_group_name = azurerm_resource_group.this.name
   # source             = "Azure/avm-res-operationalinsights-workspace/azurerm"
-  enable_telemetry                          = var.enable_telemetry
-  location                                  = azurerm_resource_group.this.location
-  resource_group_name                       = azurerm_resource_group.this.name
-  name                                      = "thislaworkspace"
-  log_analytics_workspace_retention_in_days = 30
-  log_analytics_workspace_sku               = "PerGB2018"
+  enable_telemetry = var.enable_telemetry
   log_analytics_workspace_identity = {
     type = "SystemAssigned"
   }
+  log_analytics_workspace_retention_in_days = 30
+  log_analytics_workspace_sku               = "PerGB2018"
   monitor_private_link_scope = {
     pe1 = {
       name        = "law_pl_scope"
@@ -102,6 +105,5 @@ module "law" {
       private_dns_zone_group_name = "dnslinktovnet"
     }
   }
-
 }
 

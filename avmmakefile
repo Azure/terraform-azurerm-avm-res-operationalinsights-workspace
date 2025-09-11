@@ -1,108 +1,55 @@
-REMOTE_SCRIPT := https://raw.githubusercontent.com/Azure/tfmod-scaffold/main/avm_scripts$(AVMSCRIPT_VERSION)
+AVM_PORCH_BASE_URL := git::https://github.com/Azure/avm-terraform-governance//porch-configs
+AVM_PORCH_REF := main
 
 .PHONY: help
 help:
 	@echo "please use 'make <target>'"
+	@echo "available targets are:"
+	@echo "  help"
+	@echo "  migrate (a no-op, this repo has already been migrated)"
+	@echo "  pre-commit (runs doc generation and repo file sync)"
+	@echo "  pr-check (checks that pre-commit has been run and runs linters)"
+	@echo "  test-examples (tests all examples - set `AVM_EXAMPLE` to the specific example name to only test one)"
+	@echo "  tf-test-unit (runs unit tests in `tests/unit`)"
+	@echo "  tf-test-integration (runs integration tests in `tests/integration`)"
+	@echo "  globalsetup (runs global setup tasks, only if you have a `examples/setup.sh`)"
+	@echo "  globalteardown (runs global teardown tasks, only if you have a `examples/teardown.sh`)"
 
-.PHONY: conftest
-conftest:
-	curl -H 'Cache-Control: no-cache, no-store' -sSL "$(REMOTE_SCRIPT)/conftest.sh" | bash
-
-.PHONY: docs
-docs:
-	curl -H 'Cache-Control: no-cache, no-store' -sSL "$(REMOTE_SCRIPT)/docs-gen.sh" | bash
-
-.PHONY: docscheck
-docscheck:
-	curl -H 'Cache-Control: no-cache, no-store' -sSL "$(REMOTE_SCRIPT)/docs-check.sh" | bash
-
-.PHONY: fmt
-fmt: gofmt terrafmt
-	@echo "==> Fixing Terraform code with terraform fmt..."
-	terraform fmt -recursive
-
-.PHONY: gofmt
-gofmt:
-	@echo "==> Fixing source code with gofmt..."
-	@files=$$(find . -name '*.go' | grep -v vendor); if [ -n "$$files" ]; then echo $$files | xargs gofmt -s -w; fi
-
-.PHONY: fumpt
-fumpt:
-	curl -H 'Cache-Control: no-cache, no-store' -sSL "$(REMOTE_SCRIPT)/go-fumpt.sh" | bash
-
-.PHONY: gosec
-gosec:
-	curl -H 'Cache-Control: no-cache, no-store' -sSL "$(REMOTE_SCRIPT)/gosec.sh" | bash
-
-.PHONY: tffmtcheck
-tffmtcheck:
-	curl -H 'Cache-Control: no-cache, no-store' -sSL "$(REMOTE_SCRIPT)/terraform-fmt.sh" | bash
-
-.PHONY: tfvalidatecheck
-tfvalidatecheck:
-	curl -H 'Cache-Control: no-cache, no-store' -sSL "$(REMOTE_SCRIPT)/terraform-validate.sh" | bash
-
-.PHONY: terrafmtcheck
-terrafmtcheck:
-	curl -H 'Cache-Control: no-cache, no-store' -sSL "$(REMOTE_SCRIPT)/terrafmt-check.sh" | bash
-
-.PHONY: gofmtcheck
-gofmtcheck:
-	curl -H 'Cache-Control: no-cache, no-store' -sSL "$(REMOTE_SCRIPT)/gofmtcheck.sh" | bash
-	curl -H 'Cache-Control: no-cache, no-store' -sSL "$(REMOTE_SCRIPT)/fumptcheck.sh" | bash
-
-.PHONY: golint
-golint:
-	curl -H 'Cache-Control: no-cache, no-store' -sSL "$(REMOTE_SCRIPT)/run-golangci-lint.sh" | bash
-
-.PHONY: tflint
-tflint:
-	curl -H 'Cache-Control: no-cache, no-store' -sSL "$(REMOTE_SCRIPT)/run-tflint.sh" | bash
-
-.PHONY: lint
-lint: golint tflint gosec
-
-.PHONY: fmtcheck
-fmtcheck: gofmtcheck tffmtcheck terrafmtcheck
-
-.PHONY: pr-check
-pr-check: fmtcheck docscheck tfvalidatecheck lint unit-test integration-test
-
-.PHONY: unit-test
-unit-test:
-	curl -H 'Cache-Control: no-cache, no-store' -sSL "$(REMOTE_SCRIPT)/run-terraform-test.sh" | bash -s -- unit
-
-.PHONY: integration-test
-integration-test:
-	curl -H 'Cache-Control: no-cache, no-store' -sSL "$(REMOTE_SCRIPT)/run-terraform-test.sh" | bash -s -- integration
-
-.PHONY: test-example
-test-example:
-	curl -H 'Cache-Control: no-cache, no-store' -sSL "$(REMOTE_SCRIPT)/test-example.sh" | bash
-
-.PHONY: e2e-test
-e2e-test:
-	curl -H 'Cache-Control: no-cache, no-store' -sSL "$(REMOTE_SCRIPT)/run-e2e-test.sh" | bash
-
-.PHONY: version-upgrade-test
-version-upgrade-test:
-	curl -H 'Cache-Control: no-cache, no-store' -sSL "$(REMOTE_SCRIPT)/version-upgrade-test.sh" | bash
-
-.PHONY: terrafmt
-terrafmt:
-	curl -H 'Cache-Control: no-cache, no-store' -sSL "$(REMOTE_SCRIPT)/terrafmt.sh" | bash
+.PHONY: migrate
+migrate:
+	@echo "This is a no-op. This repo has already been migrated."
 
 .PHONY: pre-commit
-pre-commit: depsensure fmt autofix docs
+pre-commit:
+	@echo "Running pre-commit..."
+	porch run ${TUI} -f "$(AVM_PORCH_BASE_URL)/pre-commit.porch.yaml?ref=$(AVM_PORCH_REF)"
 
-.PHONY: depsensure
-depsensure:
-	curl -H 'Cache-Control: no-cache, no-store' -sSL "$(REMOTE_SCRIPT)/deps-ensure.sh" | bash
+.PHONY: pr-check
+pr-check:
+	@echo "Running PR check..."
+	porch run ${TUI} -f "$(AVM_PORCH_BASE_URL)/pr-check.porch.yaml?ref=$(AVM_PORCH_REF)"
 
-.PHONY: autofix
-autofix:
-	curl -H 'Cache-Control: no-cache, no-store' -sSL "$(REMOTE_SCRIPT)/autofix.sh" | bash
+.PHONY: test-examples
+test-examples:
+	@echo "Testing examples..."
+	porch run ${TUI} -f "$(AVM_PORCH_BASE_URL)/test-examples.porch.yaml?ref=$(AVM_PORCH_REF)"
 
-.PHONY: grept-apply
-grept-apply:
-	curl -H 'Cache-Control: no-cache, no-store' -sSL "$(REMOTE_SCRIPT)/grept-apply.sh" | bash
+.PHONY: tf-test-unit
+tf-test-unit:
+	@echo "Running terraform unit test..."
+	AVM_TEST_TYPE="unit" porch run ${TUI} -f "$(AVM_PORCH_BASE_URL)/terraform-test.porch.yaml?ref=$(AVM_PORCH_REF)"
+
+.PHONY: tf-test-integration
+tf-test-integration:
+	@echo "Running terraform integration test..."
+	AVM_TEST_TYPE="integration" porch run ${TUI} -f "$(AVM_PORCH_BASE_URL)/terraform-test.porch.yaml?ref=$(AVM_PORCH_REF)"
+
+.PHONY: globalsetup
+globalsetup:
+	@echo "Running global setup..."
+	porch run ${TUI} -f "$(AVM_PORCH_BASE_URL)/global-setup.porch.yaml?ref=$(AVM_PORCH_REF)"
+
+.PHONY: globalteardown
+globalteardown:
+	@echo "Running global teardown..."
+	porch run ${TUI} -f "$(AVM_PORCH_BASE_URL)/global-teardown.porch.yaml?ref=$(AVM_PORCH_REF)"
