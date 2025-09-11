@@ -48,3 +48,5 @@ avmmakefile
 avm.tflint_module.hcl
 avm.tflint_module.merged.hcl
 examples/*/policy
+*.mptfbackup
+.avm

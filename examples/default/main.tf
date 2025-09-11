@@ -1,6 +1,7 @@
 
 terraform {
   required_version = ">= 1.3.0"
+
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
@@ -39,14 +40,15 @@ resource "azurerm_resource_group" "rg" {
 # This is the module call
 module "log_analytics_workspace" {
   source = "../../"
+
+  location            = azurerm_resource_group.rg.location
+  name                = "thislaworkspace"
+  resource_group_name = azurerm_resource_group.rg.name
   # source             = "Azure/avm-res-operationalinsights-workspace/azurerm"
-  enable_telemetry                          = var.enable_telemetry
-  location                                  = azurerm_resource_group.rg.location
-  resource_group_name                       = azurerm_resource_group.rg.name
-  name                                      = "thislaworkspace"
-  log_analytics_workspace_retention_in_days = 30
-  log_analytics_workspace_sku               = "PerGB2018"
+  enable_telemetry = var.enable_telemetry
   log_analytics_workspace_identity = {
     type = "SystemAssigned"
   }
+  log_analytics_workspace_retention_in_days = 30
+  log_analytics_workspace_sku               = "PerGB2018"
 }
