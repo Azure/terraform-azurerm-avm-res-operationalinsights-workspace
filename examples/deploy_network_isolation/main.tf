@@ -34,7 +34,7 @@ provider "azapi" {
 # This ensures we have unique CAF compliant names for our resources.
 module "naming" {
   source  = "Azure/naming/azurerm"
-  version = "0.3.0"
+  version = "0.4.1"
 }
 
 # This picks a random region from the list of regions.
@@ -65,7 +65,7 @@ resource "azurerm_subnet" "this" {
 
 module "privatednszone" {
   source  = "Azure/avm-res-network-privatednszone/azurerm"
-  version = "0.1.2"
+  version = "0.3.2"
 
   domain_name         = "privatelink.monitor.azure.com"
   resource_group_name = azurerm_resource_group.this.name
