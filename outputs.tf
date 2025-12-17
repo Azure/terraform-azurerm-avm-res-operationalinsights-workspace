@@ -2,7 +2,7 @@ output "private_endpoints" {
   description = <<DESCRIPTION
   A map of the private endpoints created.
   DESCRIPTION
-  value       = azurerm_private_endpoint.this
+  value       = var.private_endpoints_manage_dns_zone_group ? azurerm_private_endpoint.this : azurerm_private_endpoint.this_unmanaged
 }
 
 output "resource" {

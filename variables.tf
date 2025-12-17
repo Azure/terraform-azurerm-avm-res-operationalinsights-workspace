@@ -51,16 +51,17 @@ variable "diagnostic_settings" {
     log_categories                           = optional(set(string), [])
     log_groups                               = optional(set(string), ["allLogs"])
     metric_categories                        = optional(set(string), ["AllMetrics"])
-    log_analytics_destination_type           = optional(string, "Dedicated")
+    log_analytics_destination_type           = optional(string, null)
     workspace_resource_id                    = optional(string, null)
     storage_account_resource_id              = optional(string, null)
     event_hub_authorization_rule_resource_id = optional(string, null)
     event_hub_name                           = optional(string, null)
     marketplace_partner_resource_id          = optional(string, null)
+    target_resource_id                       = optional(string, null)
   }))
   default     = {}
   description = <<DESCRIPTION
-  A map of diagnostic settings to create on the Key Vault. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
+  A map of diagnostic settings to create on the resource. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
   
   - `name` - (Optional) The name of the diagnostic setting. One will be generated if not set, however this will not be unique if you want to create multiple diagnostic setting resources.
   - `log_categories` - (Optional) A set of log categories to send to the log analytics workspace. Defaults to `[]`.
@@ -72,6 +73,7 @@ variable "diagnostic_settings" {
   - `event_hub_authorization_rule_resource_id` - (Optional) The resource ID of the event hub authorization rule to send logs and metrics to.
   - `event_hub_name` - (Optional) The name of the event hub. If none is specified, the default event hub will be selected.
   - `marketplace_partner_resource_id` - (Optional) The full ARM resource ID of the Marketplace resource to which you would like to send Diagnostic LogsLogs.
+  - `target_resource_id` - (Optional) The resource ID of the resource to which the diagnostic setting will be attached. If not specified, the diagnostic setting will be attached to the Log Analytics Workspace itself.
   DESCRIPTION
   nullable    = false
 
@@ -83,10 +85,10 @@ variable "diagnostic_settings" {
     condition = alltrue(
       [
         for _, v in var.diagnostic_settings :
-        v.workspace_resource_id != null || v.storage_account_resource_id != null || v.event_hub_authorization_rule_resource_id != null || v.marketplace_partner_resource_id != null
+        v.workspace_resource_id != null || v.storage_account_resource_id != null || v.event_hub_authorization_rule_resource_id != null || v.marketplace_partner_resource_id != null || v.target_resource_id != null
       ]
     )
-    error_message = "At least one of `workspace_resource_id`, `storage_account_resource_id`, `marketplace_partner_resource_id`, or `event_hub_authorization_rule_resource_id`, must be set."
+    error_message = "At least one of `workspace_resource_id`, `storage_account_resource_id`, `marketplace_partner_resource_id`, `event_hub_authorization_rule_resource_id` or `target_resource_id` must be set."
   }
 }
 
@@ -138,6 +140,36 @@ variable "log_analytics_workspace_daily_quota_gb" {
   description = "(Optional) The workspace daily quota for ingestion in GB. Defaults to -1 (unlimited) if omitted."
 }
 
+variable "log_analytics_workspace_data_exports" {
+  type = map(object({
+    name                    = string
+    table_names             = list(string)
+    destination_resource_id = string
+    enabled                 = optional(bool, true)
+    event_hub_name          = optional(string, null)
+  }))
+  default     = {}
+  description = <<DESCRIPTION
+  A map of data exports to create.
+  - `name` - The name of the data export rule.
+  - `table_names` - A list of table names to export.
+  - `destination_resource_id` - The resource ID of the destination (Storage Account or Event Hub).
+  - `enabled` - (Optional) Whether the data export is enabled. Defaults to `true`.
+  - `event_hub_name` - (Optional) The name of the Event Hub. Required if `destination_resource_id` is an Event Hub Namespace ID.
+  DESCRIPTION
+
+  validation {
+    condition     = alltrue([for k, v in var.log_analytics_workspace_data_exports : can(regex("^[a-zA-Z][a-zA-Z0-9-]{2,61}[a-zA-Z0-9]$", v.name))])
+    error_message = "Export name must be between 4-63 characters, include only letters, numbers, and hyphens, start with a letter, and end with a letter or a number."
+  }
+}
+
+variable "log_analytics_workspace_dedicated_cluster_resource_id" {
+  type        = string
+  default     = null
+  description = "(Optional) The resource ID of the dedicated cluster to link to the Log Analytics Workspace."
+}
+
 variable "log_analytics_workspace_identity" {
   type = object({
     identity_ids = optional(set(string))
@@ -151,21 +183,34 @@ EOT
 }
 
 variable "log_analytics_workspace_internet_ingestion_enabled" {
-  type        = bool
+  type        = string
   default     = "false"
-  description = "(Required) Should the Log Analytics Workspace support ingestion over the Public Internet? Defaults to `False`."
+  description = "(Optional) Should the Log Analytics Workspace support ingestion over the Public Internet? Possible values are `true`, `false`, and `SecuredByPerimeter`. Defaults to `false`."
 }
 
 variable "log_analytics_workspace_internet_query_enabled" {
-  type        = bool
+  type        = string
   default     = "false"
-  description = "(Required) Should the Log Analytics Workspace support querying over the Public Internet? Defaults to `False`."
+  description = "(Optional) Should the Log Analytics Workspace support querying over the Public Internet? Possible values are `true`, `false`, and `SecuredByPerimeter`. Defaults to `false`."
 }
 
-variable "log_analytics_workspace_local_authentication_disabled" {
+variable "log_analytics_workspace_linked_storage_accounts" {
+  type = map(object({
+    data_source_type    = string
+    storage_account_ids = list(string)
+  }))
+  default     = {}
+  description = <<DESCRIPTION
+  A map of linked storage accounts to create.
+  - `data_source_type` - The data source type which should be used for this Log Analytics Linked Storage Account. Possible values are `CustomLogs`, `AzureWatson`, `Query`, `Ingestion` and `Alerts`.
+  - `storage_account_ids` - A list of storage account resource IDs to link.
+  DESCRIPTION
+}
+
+variable "log_analytics_workspace_local_authentication_enabled" {
   type        = bool
-  default     = null
-  description = "(Optional) Specifies if the log Analytics workspace should enforce authentication using Azure AD. Defaults to `false`."
+  default     = true
+  description = "(Optional) Specifies if the log Analytics workspace should enforce authentication using Azure AD. Defaults to `true`."
 }
 
 variable "log_analytics_workspace_reservation_capacity_in_gb_per_day" {
@@ -186,6 +231,74 @@ variable "log_analytics_workspace_sku" {
   description = "(Optional) Specifies the SKU of the Log Analytics Workspace. Possible values are `Free`, `PerNode`, `Premium`, `Standard`, `Standalone`, `Unlimited`, `CapacityReservation`, and `PerGB2018` (new SKU as of `2018-04-03`). Defaults to `PerGB2018`."
 }
 
+variable "log_analytics_workspace_tables" {
+  type = map(object({
+    name                    = string
+    resource_id             = optional(string)
+    retention_in_days       = optional(number)
+    total_retention_in_days = optional(number)
+    plan                    = optional(string)
+    schema = optional(object({
+      name        = optional(string)
+      description = optional(string)
+      columns = optional(list(object({
+        name = string
+        type = string
+      })), [])
+    }))
+  }))
+  default     = {}
+  description = <<DESCRIPTION
+A map of tables to create in the Log Analytics Workspace.
+- `name` - (Required) The name of the table.
+- `resource_id` - (Optional) The resource ID of the Log Analytics Workspace where the table will be created. If not specified, the table will be created in the Log Analytics Workspace created by this module.
+- `retention_in_days` - (Optional) The retention period for the table in days.
+- `total_retention_in_days` - (Optional) The total retention period for the table in days.
+- `plan` - (Optional) The plan for the table. Possible values are `Basic` and `Analytics`.
+- `schema` - (Optional) The schema of the table.
+  - `name` - (Optional) The name of the schema.
+  - `description` - (Optional) The description of the schema.
+  - `columns` - (Optional) A list of columns in the schema.
+    - `name` - (Required) The name of the column.
+    - `type` - (Required) The type of the column. Possible values are `boolean`, `datetime`, `dynamic`, `guid`, `int`, `long`, `real`, and `string`.
+DESCRIPTION
+}
+
+variable "log_analytics_workspace_tables_update" {
+  type = map(object({
+    name                    = string
+    resource_id             = optional(string)
+    retention_in_days       = optional(number)
+    total_retention_in_days = optional(number)
+    plan                    = optional(string)
+    schema = optional(object({
+      name        = optional(string)
+      description = optional(string)
+      columns = optional(list(object({
+        name = string
+        type = string
+      })), [])
+    }))
+  }))
+  default     = {}
+  description = <<DESCRIPTION
+A map of tables to update in the Log Analytics Workspace. This is useful for updating default tables like `Heartbeat` or `Syslog`, or for adding new columns to existing tables.
+- `name` - (Required) The name of the table.
+- `resource_id` - (Optional) The resource ID of the Log Analytics Workspace where the table exists. If not specified, the table is assumed to be in the Log Analytics Workspace created by this module.
+- `retention_in_days` - (Optional) The retention period for the table in days.
+- `total_retention_in_days` - (Optional) The total retention period for the table in days.
+- `plan` - (Optional) The plan for the table. Possible values are `Basic` and `Analytics`.
+- `schema` - (Optional) The schema of the table. This can be used to add new columns to the table.
+  - `name` - (Optional) The name of the schema.
+  - `description` - (Optional) The description of the schema.
+  - `columns` - (Optional) A list of columns in the schema.
+    - `name` - (Required) The name of the column.
+    - `type` - (Required) The type of the column. Possible values are `boolean`, `datetime`, `dynamic`, `guid`, `int`, `long`, `real`, and `string`.
+
+> Note: Removing a table from this map (destroying the update resource) does not revert the changes made to the table (e.g. removing columns). It simply stops managing the resource. To remove a column, you must explicitly update the schema with the column removed before removing the table from this map.
+DESCRIPTION
+}
+
 variable "log_analytics_workspace_timeouts" {
   type = object({
     create = optional(string)
@@ -204,12 +317,37 @@ DESCRIPTION
 
 variable "monitor_private_link_scope" {
   type = map(object({
-    name        = optional(string)
-    resource_id = string
+    name                  = optional(string)
+    resource_id           = string
+    ingestion_access_mode = optional(string, "PrivateOnly")
+    query_access_mode     = optional(string, "PrivateOnly")
+    exclusions = optional(list(object({
+      ingestion_access_mode            = optional(string, "PrivateOnly")
+      query_access_mode                = optional(string, "PrivateOnly")
+      private_endpoint_connection_name = string
+    })), [])
+    lock = optional(object({
+      kind = string
+      name = optional(string, null)
+    }))
   }))
   default     = {}
   description = <<DESCRIPTION
+  A map of Monitor Private Link Scopes to create. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
   
+  - `name` - (Optional) The name of the Monitor Private Link Scope. One will be generated if not set.
+  - `resource_id` - (Required) The resource ID of the Resource Group where the Monitor Private Link Scope will be created.
+  - `ingestion_access_mode` - (Optional) The ingestion access mode for the Monitor Private Link Scope. Possible values are `PrivateOnly` and `Open`. Defaults to `PrivateOnly`.
+  - `query_access_mode` - (Optional) The query access mode for the Monitor Private Link Scope. Possible values are `PrivateOnly` and `Open`. Defaults to `PrivateOnly`.
+  - `exclusions` - (Optional) A list of exclusions to apply to the Monitor Private Link Scope.
+    - `ingestion_access_mode` - (Optional) The ingestion access mode for the exclusion. Possible values are `PrivateOnly` and `Open`. Defaults to `PrivateOnly`.
+    - `query_access_mode` - (Optional) The query access mode for the exclusion. Possible values are `PrivateOnly` and `Open`. Defaults to `PrivateOnly`.
+    - `private_endpoint_connection_name` - (Required) The name of the private endpoint connection to exclude.
+  - `lock` - (Optional) Controls the Resource Lock configuration for this resource. The following properties can be specified:
+    - `kind` - (Required) The type of lock. Possible values are `CanNotDelete` and `ReadOnly`.
+    - `name` - (Optional) The name of the lock. If not specified, a name will be generated based on the `kind` value. Changing this forces the creation of a new resource.
+
+  > Note: If the map key matches a key in `var.private_endpoints`, the private endpoint connection created by this module will be automatically added to the exclusions list unless `monitor_private_link_scope_exclusion.exclude` is set to `false` in the private endpoint configuration. The access modes default to `PrivateOnly` but can be customized via `monitor_private_link_scope_exclusion`. You can also manually add an exclusion with the same `private_endpoint_connection_name` in the `exclusions` list of this variable, but using the private endpoint configuration is recommended.
   DESCRIPTION
   nullable    = false
 }
@@ -218,11 +356,20 @@ variable "monitor_private_link_scoped_resource" {
   type = map(object({
     name        = optional(string)
     resource_id = string
+    exclusions = optional(list(object({
+      ingestion_access_mode            = optional(string, "PrivateOnly")
+      query_access_mode                = optional(string, "PrivateOnly")
+      private_endpoint_connection_name = string
+    })), [])
   }))
   default     = {}
   description = <<DESCRIPTION
  - `name` - Defaults to the name of the Log Analytics Workspace.
  - `resource_id` - Resource ID of an existing Monitor Private Link Scope to connect to.
+ - `exclusions` - (Optional) A list of exclusions to apply to the Monitor Private Link Scope.
+    - `ingestion_access_mode` - (Optional) The ingestion access mode for the exclusion. Possible values are `PrivateOnly` and `Open`. Defaults to `PrivateOnly`.
+    - `query_access_mode` - (Optional) The query access mode for the exclusion. Possible values are `PrivateOnly` and `Open`. Defaults to `PrivateOnly`.
+    - `private_endpoint_connection_name` - (Required) The name of the private endpoint connection to exclude.
 DESCRIPTION
 }
 
@@ -230,6 +377,21 @@ variable "monitor_private_link_scoped_service_name" {
   type        = string
   default     = null
   description = "The name of the service to connect to the Monitor Private Link Scope."
+}
+
+variable "network_security_perimeter_association" {
+  type = object({
+    resource_id  = string
+    profile_name = string
+    access_mode  = optional(string, "Learning")
+  })
+  default     = null
+  description = <<DESCRIPTION
+(Optional) The Network Security Perimeter (NSP) association configuration.
+- `resource_id` - (Required) The resource ID of the Network Security Perimeter.
+- `profile_name` - (Required) The name of the NSP profile to associate with.
+- `access_mode` - (Optional) The access mode for the association. Possible values are `Learning`, `Enforced`, and `Audit`. Defaults to `Learning`.
+DESCRIPTION
 }
 
 variable "private_endpoints" {
@@ -262,10 +424,16 @@ variable "private_endpoints" {
       name               = string
       private_ip_address = string
     })), {})
+    monitor_private_link_scope_exclusion = optional(object({
+      exclude               = optional(bool, true)
+      ingestion_access_mode = optional(string, "PrivateOnly")
+      query_access_mode     = optional(string, "PrivateOnly")
+    }), null)
+    monitor_private_link_scope_key = optional(string, null)
   }))
   default     = {}
   description = <<DESCRIPTION
-  A map of private endpoints to create on the Key Vault. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
+  A map of private endpoints to create on the resource. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
   
   - `name` - (Optional) The name of the private endpoint. One will be generated if not set.
   - `role_assignments` - (Optional) A map of role assignments to create on the private endpoint. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time. See `var.role_assignments` for more information.
@@ -282,6 +450,11 @@ variable "private_endpoints" {
   - `ip_configurations` - (Optional) A map of IP configurations to create on the private endpoint. If not specified the platform will create one. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
     - `name` - The name of the IP configuration.
     - `private_ip_address` - The private IP address of the IP configuration.
+  - `monitor_private_link_scope_exclusion` - (Optional) An object to configure the exclusion of the private endpoint from the Monitor Private Link Scope.
+    - `exclude` - (Optional) Whether to exclude the private endpoint from the Monitor Private Link Scope. Defaults to `true`.
+    - `ingestion_access_mode` - (Optional) The ingestion access mode for the exclusion. Possible values are `PrivateOnly` and `Open`. Defaults to `PrivateOnly`.
+    - `query_access_mode` - (Optional) The query access mode for the exclusion. Possible values are `PrivateOnly` and `Open`. Defaults to `PrivateOnly`.
+  - `monitor_private_link_scope_key` - (Optional) The key of the Monitor Private Link Scope to connect to. This key must match a key in `var.monitor_private_link_scope` or `var.monitor_private_link_scoped_resource`.
   DESCRIPTION
   nullable    = false
 }

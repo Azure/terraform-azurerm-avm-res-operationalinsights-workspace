@@ -11,7 +11,7 @@ Major version Zero (0.y.z) is for initial development. Anything MAY change at an
 
 The following requirements are needed by this module:
 
-- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (~> 1.5)
+- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.9, < 2.0)
 
 - <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.4)
 
@@ -27,16 +27,31 @@ The following resources are used by this module:
 
 - [azapi_resource.ampls](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.amplscope](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.data_export](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.nsp_association](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.tables](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_update_resource.amplscope_update](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/update_resource) (resource)
+- [azapi_update_resource.amplscope_update_existing](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/update_resource) (resource)
+- [azapi_update_resource.tables](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/update_resource) (resource)
+- [azapi_update_resource.this](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/update_resource) (resource)
+- [azurerm_log_analytics_linked_service.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/log_analytics_linked_service) (resource)
+- [azurerm_log_analytics_linked_storage_account.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/log_analytics_linked_storage_account) (resource)
 - [azurerm_log_analytics_workspace.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/log_analytics_workspace) (resource)
+- [azurerm_management_lock.amplscope](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/management_lock) (resource)
 - [azurerm_management_lock.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/management_lock) (resource)
 - [azurerm_monitor_diagnostic_setting.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/monitor_diagnostic_setting) (resource)
 - [azurerm_monitor_private_link_scoped_service.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/monitor_private_link_scoped_service) (resource)
 - [azurerm_private_endpoint.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_endpoint) (resource)
+- [azurerm_private_endpoint.this_unmanaged](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_endpoint) (resource)
 - [azurerm_private_endpoint_application_security_group_association.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_endpoint_application_security_group_association) (resource)
+- [azurerm_private_endpoint_application_security_group_association.this_unmanaged](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_endpoint_application_security_group_association) (resource)
 - [azurerm_role_assignment.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/role_assignment) (resource)
 - [modtm_telemetry.telemetry](https://registry.terraform.io/providers/Azure/modtm/latest/docs/resources/telemetry) (resource)
 - [random_uuid.telemetry](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/uuid) (resource)
 - [azapi_client_config.telemetry](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/client_config) (data source)
+- [azapi_resource.ampls_connections](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/resource) (data source)
+- [azapi_resource.ampls_connections_existing](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/resource) (data source)
+- [azapi_resource.ampls_existing](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/resource) (data source)
 - [modtm_module_source.telemetry](https://registry.terraform.io/providers/Azure/modtm/latest/docs/data-sources/module_source) (data source)
 
 <!-- markdownlint-disable MD013 -->
@@ -92,7 +107,7 @@ Default: `null`
 
 ### <a name="input_diagnostic_settings"></a> [diagnostic\_settings](#input\_diagnostic\_settings)
 
-Description:   A map of diagnostic settings to create on the Key Vault. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
+Description:   A map of diagnostic settings to create on the resource. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
 
   - `name` - (Optional) The name of the diagnostic setting. One will be generated if not set, however this will not be unique if you want to create multiple diagnostic setting resources.
   - `log_categories` - (Optional) A set of log categories to send to the log analytics workspace. Defaults to `[]`.
@@ -104,6 +119,7 @@ Description:   A map of diagnostic settings to create on the Key Vault. The map 
   - `event_hub_authorization_rule_resource_id` - (Optional) The resource ID of the event hub authorization rule to send logs and metrics to.
   - `event_hub_name` - (Optional) The name of the event hub. If none is specified, the default event hub will be selected.
   - `marketplace_partner_resource_id` - (Optional) The full ARM resource ID of the Marketplace resource to which you would like to send Diagnostic LogsLogs.
+  - `target_resource_id` - (Optional) The resource ID of the resource to which the diagnostic setting will be attached. If not specified, the diagnostic setting will be attached to the Log Analytics Workspace itself.
 
 Type:
 
@@ -113,12 +129,13 @@ map(object({
     log_categories                           = optional(set(string), [])
     log_groups                               = optional(set(string), ["allLogs"])
     metric_categories                        = optional(set(string), ["AllMetrics"])
-    log_analytics_destination_type           = optional(string, "Dedicated")
+    log_analytics_destination_type           = optional(string, null)
     workspace_resource_id                    = optional(string, null)
     storage_account_resource_id              = optional(string, null)
     event_hub_authorization_rule_resource_id = optional(string, null)
     event_hub_name                           = optional(string, null)
     marketplace_partner_resource_id          = optional(string, null)
+    target_resource_id                       = optional(string, null)
   }))
 ```
 
@@ -176,6 +193,37 @@ Type: `number`
 
 Default: `null`
 
+### <a name="input_log_analytics_workspace_data_exports"></a> [log\_analytics\_workspace\_data\_exports](#input\_log\_analytics\_workspace\_data\_exports)
+
+Description:   A map of data exports to create.
+  - `name` - The name of the data export rule.
+  - `table_names` - A list of table names to export.
+  - `destination_resource_id` - The resource ID of the destination (Storage Account or Event Hub).
+  - `enabled` - (Optional) Whether the data export is enabled. Defaults to `true`.
+  - `event_hub_name` - (Optional) The name of the Event Hub. Required if `destination_resource_id` is an Event Hub Namespace ID.
+
+Type:
+
+```hcl
+map(object({
+    name                    = string
+    table_names             = list(string)
+    destination_resource_id = string
+    enabled                 = optional(bool, true)
+    event_hub_name          = optional(string, null)
+  }))
+```
+
+Default: `{}`
+
+### <a name="input_log_analytics_workspace_dedicated_cluster_resource_id"></a> [log\_analytics\_workspace\_dedicated\_cluster\_resource\_id](#input\_log\_analytics\_workspace\_dedicated\_cluster\_resource\_id)
+
+Description: (Optional) The resource ID of the dedicated cluster to link to the Log Analytics Workspace.
+
+Type: `string`
+
+Default: `null`
+
 ### <a name="input_log_analytics_workspace_identity"></a> [log\_analytics\_workspace\_identity](#input\_log\_analytics\_workspace\_identity)
 
 Description: - `identity_ids` - (Optional) Specifies a list of user managed identity ids to be assigned. Required if `type` is `UserAssigned`.
@@ -194,27 +242,44 @@ Default: `null`
 
 ### <a name="input_log_analytics_workspace_internet_ingestion_enabled"></a> [log\_analytics\_workspace\_internet\_ingestion\_enabled](#input\_log\_analytics\_workspace\_internet\_ingestion\_enabled)
 
-Description: (Required) Should the Log Analytics Workspace support ingestion over the Public Internet? Defaults to `False`.
+Description: (Optional) Should the Log Analytics Workspace support ingestion over the Public Internet? Possible values are `true`, `false`, and `SecuredByPerimeter`. Defaults to `false`.
 
-Type: `bool`
+Type: `string`
 
 Default: `"false"`
 
 ### <a name="input_log_analytics_workspace_internet_query_enabled"></a> [log\_analytics\_workspace\_internet\_query\_enabled](#input\_log\_analytics\_workspace\_internet\_query\_enabled)
 
-Description: (Required) Should the Log Analytics Workspace support querying over the Public Internet? Defaults to `False`.
+Description: (Optional) Should the Log Analytics Workspace support querying over the Public Internet? Possible values are `true`, `false`, and `SecuredByPerimeter`. Defaults to `false`.
 
-Type: `bool`
+Type: `string`
 
 Default: `"false"`
 
-### <a name="input_log_analytics_workspace_local_authentication_disabled"></a> [log\_analytics\_workspace\_local\_authentication\_disabled](#input\_log\_analytics\_workspace\_local\_authentication\_disabled)
+### <a name="input_log_analytics_workspace_linked_storage_accounts"></a> [log\_analytics\_workspace\_linked\_storage\_accounts](#input\_log\_analytics\_workspace\_linked\_storage\_accounts)
 
-Description: (Optional) Specifies if the log Analytics workspace should enforce authentication using Azure AD. Defaults to `false`.
+Description:   A map of linked storage accounts to create.
+  - `data_source_type` - The data source type which should be used for this Log Analytics Linked Storage Account. Possible values are `CustomLogs`, `AzureWatson`, `Query`, `Ingestion` and `Alerts`.
+  - `storage_account_ids` - A list of storage account resource IDs to link.
+
+Type:
+
+```hcl
+map(object({
+    data_source_type    = string
+    storage_account_ids = list(string)
+  }))
+```
+
+Default: `{}`
+
+### <a name="input_log_analytics_workspace_local_authentication_enabled"></a> [log\_analytics\_workspace\_local\_authentication\_enabled](#input\_log\_analytics\_workspace\_local\_authentication\_enabled)
+
+Description: (Optional) Specifies if the log Analytics workspace should enforce authentication using Azure AD. Defaults to `true`.
 
 Type: `bool`
 
-Default: `null`
+Default: `true`
 
 ### <a name="input_log_analytics_workspace_reservation_capacity_in_gb_per_day"></a> [log\_analytics\_workspace\_reservation\_capacity\_in\_gb\_per\_day](#input\_log\_analytics\_workspace\_reservation\_capacity\_in\_gb\_per\_day)
 
@@ -240,6 +305,82 @@ Type: `string`
 
 Default: `null`
 
+### <a name="input_log_analytics_workspace_tables"></a> [log\_analytics\_workspace\_tables](#input\_log\_analytics\_workspace\_tables)
+
+Description: A map of tables to create in the Log Analytics Workspace.
+- `name` - (Required) The name of the table.
+- `resource_id` - (Optional) The resource ID of the Log Analytics Workspace where the table will be created. If not specified, the table will be created in the Log Analytics Workspace created by this module.
+- `retention_in_days` - (Optional) The retention period for the table in days.
+- `total_retention_in_days` - (Optional) The total retention period for the table in days.
+- `plan` - (Optional) The plan for the table. Possible values are `Basic` and `Analytics`.
+- `schema` - (Optional) The schema of the table.
+  - `name` - (Optional) The name of the schema.
+  - `description` - (Optional) The description of the schema.
+  - `columns` - (Optional) A list of columns in the schema.
+    - `name` - (Required) The name of the column.
+    - `type` - (Required) The type of the column. Possible values are `boolean`, `datetime`, `dynamic`, `guid`, `int`, `long`, `real`, and `string`.
+
+Type:
+
+```hcl
+map(object({
+    name                    = string
+    resource_id             = optional(string)
+    retention_in_days       = optional(number)
+    total_retention_in_days = optional(number)
+    plan                    = optional(string)
+    schema = optional(object({
+      name        = optional(string)
+      description = optional(string)
+      columns = optional(list(object({
+        name = string
+        type = string
+      })), [])
+    }))
+  }))
+```
+
+Default: `{}`
+
+### <a name="input_log_analytics_workspace_tables_update"></a> [log\_analytics\_workspace\_tables\_update](#input\_log\_analytics\_workspace\_tables\_update)
+
+Description: A map of tables to update in the Log Analytics Workspace. This is useful for updating default tables like `Heartbeat` or `Syslog`, or for adding new columns to existing tables.
+- `name` - (Required) The name of the table.
+- `resource_id` - (Optional) The resource ID of the Log Analytics Workspace where the table exists. If not specified, the table is assumed to be in the Log Analytics Workspace created by this module.
+- `retention_in_days` - (Optional) The retention period for the table in days.
+- `total_retention_in_days` - (Optional) The total retention period for the table in days.
+- `plan` - (Optional) The plan for the table. Possible values are `Basic` and `Analytics`.
+- `schema` - (Optional) The schema of the table. This can be used to add new columns to the table.
+  - `name` - (Optional) The name of the schema.
+  - `description` - (Optional) The description of the schema.
+  - `columns` - (Optional) A list of columns in the schema.
+    - `name` - (Required) The name of the column.
+    - `type` - (Required) The type of the column. Possible values are `boolean`, `datetime`, `dynamic`, `guid`, `int`, `long`, `real`, and `string`.
+
+> Note: Removing a table from this map (destroying the update resource) does not revert the changes made to the table (e.g. removing columns). It simply stops managing the resource. To remove a column, you must explicitly update the schema with the column removed before removing the table from this map.
+
+Type:
+
+```hcl
+map(object({
+    name                    = string
+    resource_id             = optional(string)
+    retention_in_days       = optional(number)
+    total_retention_in_days = optional(number)
+    plan                    = optional(string)
+    schema = optional(object({
+      name        = optional(string)
+      description = optional(string)
+      columns = optional(list(object({
+        name = string
+        type = string
+      })), [])
+    }))
+  }))
+```
+
+Default: `{}`
+
 ### <a name="input_log_analytics_workspace_timeouts"></a> [log\_analytics\_workspace\_timeouts](#input\_log\_analytics\_workspace\_timeouts)
 
 Description:  - `create` - (Defaults to 30 minutes) Used when creating the Log Analytics Workspace.
@@ -262,14 +403,39 @@ Default: `null`
 
 ### <a name="input_monitor_private_link_scope"></a> [monitor\_private\_link\_scope](#input\_monitor\_private\_link\_scope)
 
-Description:   
+Description:   A map of Monitor Private Link Scopes to create. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
+
+  - `name` - (Optional) The name of the Monitor Private Link Scope. One will be generated if not set.
+  - `resource_id` - (Required) The resource ID of the Resource Group where the Monitor Private Link Scope will be created.
+  - `ingestion_access_mode` - (Optional) The ingestion access mode for the Monitor Private Link Scope. Possible values are `PrivateOnly` and `Open`. Defaults to `PrivateOnly`.
+  - `query_access_mode` - (Optional) The query access mode for the Monitor Private Link Scope. Possible values are `PrivateOnly` and `Open`. Defaults to `PrivateOnly`.
+  - `exclusions` - (Optional) A list of exclusions to apply to the Monitor Private Link Scope.
+    - `ingestion_access_mode` - (Optional) The ingestion access mode for the exclusion. Possible values are `PrivateOnly` and `Open`. Defaults to `PrivateOnly`.
+    - `query_access_mode` - (Optional) The query access mode for the exclusion. Possible values are `PrivateOnly` and `Open`. Defaults to `PrivateOnly`.
+    - `private_endpoint_connection_name` - (Required) The name of the private endpoint connection to exclude.
+  - `lock` - (Optional) Controls the Resource Lock configuration for this resource. The following properties can be specified:
+    - `kind` - (Required) The type of lock. Possible values are `CanNotDelete` and `ReadOnly`.
+    - `name` - (Optional) The name of the lock. If not specified, a name will be generated based on the `kind` value. Changing this forces the creation of a new resource.
+
+  > Note: If the map key matches a key in `var.private_endpoints`, the private endpoint connection created by this module will be automatically added to the exclusions list unless `monitor_private_link_scope_exclusion.exclude` is set to `false` in the private endpoint configuration. The access modes default to `PrivateOnly` but can be customized via `monitor_private_link_scope_exclusion`. You can also manually add an exclusion with the same `private_endpoint_connection_name` in the `exclusions` list of this variable, but using the private endpoint configuration is recommended.
 
 Type:
 
 ```hcl
 map(object({
-    name        = optional(string)
-    resource_id = string
+    name                  = optional(string)
+    resource_id           = string
+    ingestion_access_mode = optional(string, "PrivateOnly")
+    query_access_mode     = optional(string, "PrivateOnly")
+    exclusions = optional(list(object({
+      ingestion_access_mode            = optional(string, "PrivateOnly")
+      query_access_mode                = optional(string, "PrivateOnly")
+      private_endpoint_connection_name = string
+    })), [])
+    lock = optional(object({
+      kind = string
+      name = optional(string, null)
+    }))
   }))
 ```
 
@@ -279,6 +445,10 @@ Default: `{}`
 
 Description:  - `name` - Defaults to the name of the Log Analytics Workspace.
  - `resource_id` - Resource ID of an existing Monitor Private Link Scope to connect to.
+ - `exclusions` - (Optional) A list of exclusions to apply to the Monitor Private Link Scope.
+    - `ingestion_access_mode` - (Optional) The ingestion access mode for the exclusion. Possible values are `PrivateOnly` and `Open`. Defaults to `PrivateOnly`.
+    - `query_access_mode` - (Optional) The query access mode for the exclusion. Possible values are `PrivateOnly` and `Open`. Defaults to `PrivateOnly`.
+    - `private_endpoint_connection_name` - (Required) The name of the private endpoint connection to exclude.
 
 Type:
 
@@ -286,6 +456,11 @@ Type:
 map(object({
     name        = optional(string)
     resource_id = string
+    exclusions = optional(list(object({
+      ingestion_access_mode            = optional(string, "PrivateOnly")
+      query_access_mode                = optional(string, "PrivateOnly")
+      private_endpoint_connection_name = string
+    })), [])
   }))
 ```
 
@@ -299,9 +474,28 @@ Type: `string`
 
 Default: `null`
 
+### <a name="input_network_security_perimeter_association"></a> [network\_security\_perimeter\_association](#input\_network\_security\_perimeter\_association)
+
+Description: (Optional) The Network Security Perimeter (NSP) association configuration.
+- `resource_id` - (Required) The resource ID of the Network Security Perimeter.
+- `profile_name` - (Required) The name of the NSP profile to associate with.
+- `access_mode` - (Optional) The access mode for the association. Possible values are `Learning`, `Enforced`, and `Audit`. Defaults to `Learning`.
+
+Type:
+
+```hcl
+object({
+    resource_id  = string
+    profile_name = string
+    access_mode  = optional(string, "Learning")
+  })
+```
+
+Default: `null`
+
 ### <a name="input_private_endpoints"></a> [private\_endpoints](#input\_private\_endpoints)
 
-Description:   A map of private endpoints to create on the Key Vault. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
+Description:   A map of private endpoints to create on the resource. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
 
   - `name` - (Optional) The name of the private endpoint. One will be generated if not set.
   - `role_assignments` - (Optional) A map of role assignments to create on the private endpoint. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time. See `var.role_assignments` for more information.
@@ -318,6 +512,11 @@ Description:   A map of private endpoints to create on the Key Vault. The map ke
   - `ip_configurations` - (Optional) A map of IP configurations to create on the private endpoint. If not specified the platform will create one. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
     - `name` - The name of the IP configuration.
     - `private_ip_address` - The private IP address of the IP configuration.
+  - `monitor_private_link_scope_exclusion` - (Optional) An object to configure the exclusion of the private endpoint from the Monitor Private Link Scope.
+    - `exclude` - (Optional) Whether to exclude the private endpoint from the Monitor Private Link Scope. Defaults to `true`.
+    - `ingestion_access_mode` - (Optional) The ingestion access mode for the exclusion. Possible values are `PrivateOnly` and `Open`. Defaults to `PrivateOnly`.
+    - `query_access_mode` - (Optional) The query access mode for the exclusion. Possible values are `PrivateOnly` and `Open`. Defaults to `PrivateOnly`.
+  - `monitor_private_link_scope_key` - (Optional) The key of the Monitor Private Link Scope to connect to. This key must match a key in `var.monitor_private_link_scope` or `var.monitor_private_link_scoped_resource`.
 
 Type:
 
@@ -351,6 +550,12 @@ map(object({
       name               = string
       private_ip_address = string
     })), {})
+    monitor_private_link_scope_exclusion = optional(object({
+      exclude               = optional(bool, true)
+      ingestion_access_mode = optional(string, "PrivateOnly")
+      query_access_mode     = optional(string, "PrivateOnly")
+    }), null)
+    monitor_private_link_scope_key = optional(string, null)
   }))
 ```
 
