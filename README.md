@@ -21,6 +21,8 @@ The following requirements are needed by this module:
 
 - <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.5)
 
+- <a name="requirement_time"></a> [time](#requirement\_time) (~> 0.9)
+
 ## Resources
 
 The following resources are used by this module:
@@ -48,6 +50,7 @@ The following resources are used by this module:
 - [azurerm_role_assignment.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/role_assignment) (resource)
 - [modtm_telemetry.telemetry](https://registry.terraform.io/providers/Azure/modtm/latest/docs/resources/telemetry) (resource)
 - [random_uuid.telemetry](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/uuid) (resource)
+- [time_sleep.wait_for_ampls_update](https://registry.terraform.io/providers/hashicorp/time/latest/docs/resources/sleep) (resource)
 - [azapi_client_config.telemetry](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/client_config) (data source)
 - [azapi_resource.ampls_connections](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/resource) (data source)
 - [azapi_resource.ampls_connections_existing](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/resource) (data source)
@@ -491,6 +494,33 @@ object({
 
 Default: `null`
 
+### <a name="input_private_endpoint_extensions"></a> [private\_endpoint\_extensions](#input\_private\_endpoint\_extensions)
+
+Description:   A map of extensions to apply to the private endpoints. The map key must match the key in `var.private_endpoints`.
+
+  - `monitor_private_link_scope_key` - (Optional) The key of the Monitor Private Link Scope to associate with the private endpoint.
+  - `monitor_private_link_scope_exclusion` - (Optional) The exclusion configuration for the Monitor Private Link Scope.
+    - `exclude` - (Optional) Whether to exclude the private endpoint from the Monitor Private Link Scope. Defaults to `true`.
+    - `ingestion_access_mode` - (Optional) The ingestion access mode for the exclusion. Possible values are `PrivateOnly` and `Open`. Defaults to `PrivateOnly`.
+    - `query_access_mode` - (Optional) The query access mode for the exclusion. Possible values are `PrivateOnly` and `Open`. Defaults to `PrivateOnly`.
+  - `manage_dns_zone_group` - (Optional) Whether to manage private DNS zone groups with this module. If set to false, you must manage private DNS zone groups externally, e.g. using Azure Policy. Defaults to `true`.
+
+Type:
+
+```hcl
+map(object({
+    monitor_private_link_scope_key = optional(string, null)
+    monitor_private_link_scope_exclusion = optional(object({
+      exclude               = optional(bool, true)
+      ingestion_access_mode = optional(string, "PrivateOnly")
+      query_access_mode     = optional(string, "PrivateOnly")
+    }), null)
+    manage_dns_zone_group = optional(bool, true)
+  }))
+```
+
+Default: `{}`
+
 ### <a name="input_private_endpoints"></a> [private\_endpoints](#input\_private\_endpoints)
 
 Description:   A map of private endpoints to create on the resource. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
@@ -510,12 +540,6 @@ Description:   A map of private endpoints to create on the resource. The map key
   - `ip_configurations` - (Optional) A map of IP configurations to create on the private endpoint. If not specified the platform will create one. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
     - `name` - The name of the IP configuration.
     - `private_ip_address` - The private IP address of the IP configuration.
-  - `monitor_private_link_scope_exclusion` - (Optional) An object to configure the exclusion of the private endpoint from the Monitor Private Link Scope.
-    - `exclude` - (Optional) Whether to exclude the private endpoint from the Monitor Private Link Scope. Defaults to `true`.
-    - `ingestion_access_mode` - (Optional) The ingestion access mode for the exclusion. Possible values are `PrivateOnly` and `Open`. Defaults to `PrivateOnly`.
-    - `query_access_mode` - (Optional) The query access mode for the exclusion. Possible values are `PrivateOnly` and `Open`. Defaults to `PrivateOnly`.
-  - `monitor_private_link_scope_key` - (Optional) The key of the Monitor Private Link Scope to connect to. This key must match a key in `var.monitor_private_link_scope` or `var.monitor_private_link_scoped_resource`.
-  - `manage_dns_zone_group` - (Optional) Whether to manage private DNS zone groups with this module. If set to false, you must manage private DNS zone groups externally, e.g. using Azure Policy. Defaults to `true`.
 
 Type:
 
@@ -549,13 +573,6 @@ map(object({
       name               = string
       private_ip_address = string
     })), {})
-    monitor_private_link_scope_exclusion = optional(object({
-      exclude               = optional(bool, true)
-      ingestion_access_mode = optional(string, "PrivateOnly")
-      query_access_mode     = optional(string, "PrivateOnly")
-    }), null)
-    monitor_private_link_scope_key = optional(string, null)
-    manage_dns_zone_group          = optional(bool, true)
   }))
 ```
 
