@@ -1,6 +1,6 @@
 # TODO remove this code & var.private_endpoints if private link is not support.  Note it must be included in this module if it is supported.
 resource "azurerm_private_endpoint" "this" {
-  for_each = { for k, v in var.private_endpoints : k => v if var.private_endpoints_manage_dns_zone_group }
+  for_each = { for k, v in var.private_endpoints : k => v if v.manage_dns_zone_group }
 
   location                      = each.value.location != null ? each.value.location : var.location
   name                          = each.value.name != null ? each.value.name : "pep-${var.name}"
@@ -42,7 +42,7 @@ resource "azurerm_private_endpoint" "this" {
 }
 
 resource "azurerm_private_endpoint" "this_unmanaged" {
-  for_each = { for k, v in var.private_endpoints : k => v if !var.private_endpoints_manage_dns_zone_group }
+  for_each = { for k, v in var.private_endpoints : k => v if !v.manage_dns_zone_group }
 
   location                      = each.value.location != null ? each.value.location : var.location
   name                          = each.value.name != null ? each.value.name : "pep-${var.name}"
@@ -76,14 +76,14 @@ resource "azurerm_private_endpoint" "this_unmanaged" {
 }
 
 resource "azurerm_private_endpoint_application_security_group_association" "this" {
-  for_each = var.private_endpoints_manage_dns_zone_group ? local.private_endpoint_application_security_group_associations : {}
+  for_each = { for k, v in local.private_endpoint_application_security_group_associations : k => v if var.private_endpoints[v.pe_key].manage_dns_zone_group }
 
   application_security_group_id = each.value.asg_resource_id
   private_endpoint_id           = azurerm_private_endpoint.this[each.value.pe_key].id
 }
 
 resource "azurerm_private_endpoint_application_security_group_association" "this_unmanaged" {
-  for_each = !var.private_endpoints_manage_dns_zone_group ? local.private_endpoint_application_security_group_associations : {}
+  for_each = { for k, v in local.private_endpoint_application_security_group_associations : k => v if !var.private_endpoints[v.pe_key].manage_dns_zone_group }
 
   application_security_group_id = each.value.asg_resource_id
   private_endpoint_id           = azurerm_private_endpoint.this_unmanaged[each.value.pe_key].id

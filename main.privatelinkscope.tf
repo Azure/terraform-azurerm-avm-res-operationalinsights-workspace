@@ -53,23 +53,23 @@ resource "azapi_update_resource" "amplscope_update" {
           flatten([
             for k, v in var.private_endpoints : [
               for connection_name in [
-                try([for c in data.azapi_resource.ampls_connections[each.key].output.properties.privateEndpointConnections : c.name if lower(c.properties.privateEndpoint.id) == lower(var.private_endpoints_manage_dns_zone_group ? azurerm_private_endpoint.this[k].id : azurerm_private_endpoint.this_unmanaged[k].id)][0], (v.private_service_connection_name != null ? v.private_service_connection_name : "pse-${var.name}"))
+                try([for c in data.azapi_resource.ampls_connections[each.key].output.properties.privateEndpointConnections : c.name if lower(c.properties.privateEndpoint.id) == lower(v.manage_dns_zone_group ? azurerm_private_endpoint.this[k].id : azurerm_private_endpoint.this_unmanaged[k].id)][0], (v.private_service_connection_name != null ? v.private_service_connection_name : "pse-${var.name}"))
                 ] : {
-                ingestionAccessMode           = try(var.private_endpoint_extensions[k].monitor_private_link_scope_exclusion, null) == null ? "PrivateOnly" : var.private_endpoint_extensions[k].monitor_private_link_scope_exclusion.ingestion_access_mode
+                ingestionAccessMode           = v.monitor_private_link_scope_exclusion == null ? "PrivateOnly" : v.monitor_private_link_scope_exclusion.ingestion_access_mode
                 privateEndpointConnectionName = connection_name
-                queryAccessMode               = try(var.private_endpoint_extensions[k].monitor_private_link_scope_exclusion, null) == null ? "PrivateOnly" : var.private_endpoint_extensions[k].monitor_private_link_scope_exclusion.query_access_mode
+                queryAccessMode               = v.monitor_private_link_scope_exclusion == null ? "PrivateOnly" : v.monitor_private_link_scope_exclusion.query_access_mode
               }
               if connection_name != null
             ]
             if try(
-              try(var.private_endpoint_extensions[k].monitor_private_link_scope_key, null) != null ? azapi_resource.amplscope[var.private_endpoint_extensions[k].monitor_private_link_scope_key].id : null,
-              try(var.private_endpoint_extensions[k].monitor_private_link_scope_key, null) != null ? var.monitor_private_link_scoped_resource[var.private_endpoint_extensions[k].monitor_private_link_scope_key].resource_id : null,
+              v.monitor_private_link_scope_key != null ? azapi_resource.amplscope[v.monitor_private_link_scope_key].id : null,
+              v.monitor_private_link_scope_key != null ? var.monitor_private_link_scoped_resource[v.monitor_private_link_scope_key].resource_id : null,
               azapi_resource.amplscope[k].id,
               var.monitor_private_link_scoped_resource[k].resource_id,
               length(var.monitor_private_link_scope) + length(var.monitor_private_link_scoped_resource) == 1 ? coalesce(try(one(values(var.monitor_private_link_scoped_resource)).resource_id, null), try(one(values(azapi_resource.amplscope)).id, null)) : null
             ) == azapi_resource.amplscope[each.key].id &&
             !contains([for e in each.value.exclusions : e.private_endpoint_connection_name], (v.private_service_connection_name != null ? v.private_service_connection_name : "pse-${var.name}")) &&
-            (try(var.private_endpoint_extensions[k].monitor_private_link_scope_exclusion, null) == null ? true : var.private_endpoint_extensions[k].monitor_private_link_scope_exclusion.exclude)
+            (v.monitor_private_link_scope_exclusion == null ? true : v.monitor_private_link_scope_exclusion.exclude)
           ])
         )
         ingestionAccessMode = each.value.ingestion_access_mode
@@ -148,7 +148,7 @@ resource "azapi_update_resource" "amplscope_update_existing" {
           flatten([
             for k, v in var.private_endpoints : [
               for connection_name in [
-                try([for c in data.azapi_resource.ampls_connections_existing[each.key].output.properties.privateEndpointConnections : c.name if lower(c.properties.privateEndpoint.id) == lower(var.private_endpoints_manage_dns_zone_group ? azurerm_private_endpoint.this[k].id : azurerm_private_endpoint.this_unmanaged[k].id)][0], (v.private_service_connection_name != null ? v.private_service_connection_name : "pse-${var.name}"))
+                try([for c in data.azapi_resource.ampls_connections_existing[each.key].output.properties.privateEndpointConnections : c.name if lower(c.properties.privateEndpoint.id) == lower(v.manage_dns_zone_group ? azurerm_private_endpoint.this[k].id : azurerm_private_endpoint.this_unmanaged[k].id)][0], (v.private_service_connection_name != null ? v.private_service_connection_name : "pse-${var.name}"))
                 ] : {
                 ingestionAccessMode           = v.monitor_private_link_scope_exclusion == null ? "PrivateOnly" : v.monitor_private_link_scope_exclusion.ingestion_access_mode
                 privateEndpointConnectionName = connection_name

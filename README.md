@@ -128,7 +128,7 @@ map(object({
     log_categories                           = optional(set(string), [])
     log_groups                               = optional(set(string), ["allLogs"])
     metric_categories                        = optional(set(string), ["AllMetrics"])
-    log_analytics_destination_type           = optional(string, null)
+    log_analytics_destination_type           = optional(string, "Dedicated")
     workspace_resource_id                    = optional(string, null)
     storage_account_resource_id              = optional(string, null)
     event_hub_authorization_rule_resource_id = optional(string, null)
@@ -491,31 +491,6 @@ object({
 
 Default: `null`
 
-### <a name="input_private_endpoint_extensions"></a> [private\_endpoint\_extensions](#input\_private\_endpoint\_extensions)
-
-Description:   A map of extensions to apply to the private endpoints. The map key must match the key in `var.private_endpoints`.
-
-  - `monitor_private_link_scope_key` - (Optional) The key of the Monitor Private Link Scope to associate with the private endpoint.
-  - `monitor_private_link_scope_exclusion` - (Optional) The exclusion configuration for the Monitor Private Link Scope.
-    - `exclude` - (Optional) Whether to exclude the private endpoint from the Monitor Private Link Scope. Defaults to `true`.
-    - `ingestion_access_mode` - (Optional) The ingestion access mode for the exclusion. Possible values are `PrivateOnly` and `Open`.
-    - `query_access_mode` - (Optional) The query access mode for the exclusion. Possible values are `PrivateOnly` and `Open`.
-
-Type:
-
-```hcl
-map(object({
-    monitor_private_link_scope_key = optional(string)
-    monitor_private_link_scope_exclusion = optional(object({
-      exclude               = bool
-      ingestion_access_mode = string
-      query_access_mode     = string
-    }))
-  }))
-```
-
-Default: `{}`
-
 ### <a name="input_private_endpoints"></a> [private\_endpoints](#input\_private\_endpoints)
 
 Description:   A map of private endpoints to create on the resource. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
@@ -535,6 +510,12 @@ Description:   A map of private endpoints to create on the resource. The map key
   - `ip_configurations` - (Optional) A map of IP configurations to create on the private endpoint. If not specified the platform will create one. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
     - `name` - The name of the IP configuration.
     - `private_ip_address` - The private IP address of the IP configuration.
+  - `monitor_private_link_scope_exclusion` - (Optional) An object to configure the exclusion of the private endpoint from the Monitor Private Link Scope.
+    - `exclude` - (Optional) Whether to exclude the private endpoint from the Monitor Private Link Scope. Defaults to `true`.
+    - `ingestion_access_mode` - (Optional) The ingestion access mode for the exclusion. Possible values are `PrivateOnly` and `Open`. Defaults to `PrivateOnly`.
+    - `query_access_mode` - (Optional) The query access mode for the exclusion. Possible values are `PrivateOnly` and `Open`. Defaults to `PrivateOnly`.
+  - `monitor_private_link_scope_key` - (Optional) The key of the Monitor Private Link Scope to connect to. This key must match a key in `var.monitor_private_link_scope` or `var.monitor_private_link_scoped_resource`.
+  - `manage_dns_zone_group` - (Optional) Whether to manage private DNS zone groups with this module. If set to false, you must manage private DNS zone groups externally, e.g. using Azure Policy. Defaults to `true`.
 
 Type:
 
@@ -568,18 +549,17 @@ map(object({
       name               = string
       private_ip_address = string
     })), {})
+    monitor_private_link_scope_exclusion = optional(object({
+      exclude               = optional(bool, true)
+      ingestion_access_mode = optional(string, "PrivateOnly")
+      query_access_mode     = optional(string, "PrivateOnly")
+    }), null)
+    monitor_private_link_scope_key = optional(string, null)
+    manage_dns_zone_group          = optional(bool, true)
   }))
 ```
 
 Default: `{}`
-
-### <a name="input_private_endpoints_manage_dns_zone_group"></a> [private\_endpoints\_manage\_dns\_zone\_group](#input\_private\_endpoints\_manage\_dns\_zone\_group)
-
-Description: Whether to manage private DNS zone groups with this module. If set to false, you must manage private DNS zone groups externally, e.g. using Azure Policy.
-
-Type: `bool`
-
-Default: `true`
 
 ### <a name="input_role_assignments"></a> [role\_assignments](#input\_role\_assignments)
 
