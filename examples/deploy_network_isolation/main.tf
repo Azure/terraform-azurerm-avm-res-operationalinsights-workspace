@@ -65,7 +65,7 @@ resource "azurerm_subnet" "this" {
 
 module "privatednszone" {
   source  = "Azure/avm-res-network-privatednszone/azurerm"
-  version = "~> 0.1.1"
+  version = "0.1.2"
 
   domain_name         = "privatelink.monitor.azure.com"
   resource_group_name = azurerm_resource_group.this.name

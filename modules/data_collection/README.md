@@ -311,7 +311,7 @@ Description: (Optional) A map of tags to assign to the resources.
 
 Type: `map(string)`
 
-Default: `{}`
+Default: `null`
 
 ## Outputs
 
@@ -328,6 +328,10 @@ Description: The Resource IDs of the Data Collection Rule Associations.
 ### <a name="output_data_collection_rule_ids"></a> [data\_collection\_rule\_ids](#output\_data\_collection\_rule\_ids)
 
 Description: The Resource IDs of the Data Collection Rules.
+
+### <a name="output_resource_id"></a> [resource\_id](#output\_resource\_id)
+
+Description: The resource ID of the primary resource. In this case, it returns null as this module creates multiple resources.
 
 ## Modules
 

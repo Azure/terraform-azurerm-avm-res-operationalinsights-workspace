@@ -12,3 +12,8 @@ output "data_collection_rule_ids" {
   description = "The Resource IDs of the Data Collection Rules."
   value       = { for k, v in azapi_resource.data_collection_rule : k => v.id }
 }
+
+output "resource_id" {
+  description = "The resource ID of the primary resource. In this case, it returns null as this module creates multiple resources."
+  value       = null
+}

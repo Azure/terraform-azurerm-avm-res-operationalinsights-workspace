@@ -67,6 +67,6 @@ DESCRIPTION
 
 variable "tags" {
   type        = map(string)
-  default     = {}
+  default     = null
   description = "(Optional) A mapping of tags to assign to the resources."
 }

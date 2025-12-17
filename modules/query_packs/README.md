@@ -16,7 +16,13 @@ This module is used to deploy Azure Monitor Query Packs and Queries.
 
 The following requirements are needed by this module:
 
+- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.9.0)
+
 - <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.4)
+
+- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 4.0)
+
+- <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.6)
 
 ## Resources
 
@@ -112,7 +118,7 @@ Description: (Optional) A mapping of tags to assign to the resources.
 
 Type: `map(string)`
 
-Default: `{}`
+Default: `null`
 
 ## Outputs
 
@@ -120,11 +126,15 @@ The following outputs are exported:
 
 ### <a name="output_query_pack_resource_ids"></a> [query\_pack\_resource\_ids](#output\_query\_pack\_resource\_ids)
 
-Description: n/a
+Description: A map of resource IDs for the created Query Packs.
 
 ### <a name="output_query_resource_ids"></a> [query\_resource\_ids](#output\_query\_resource\_ids)
 
-Description: n/a
+Description: A map of resource IDs for the created Queries.
+
+### <a name="output_resource_id"></a> [resource\_id](#output\_resource\_id)
+
+Description: The resource ID of the primary resource. In this case, it returns null as this module creates multiple resources.
 
 ## Modules
 

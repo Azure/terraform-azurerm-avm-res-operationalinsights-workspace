@@ -57,7 +57,6 @@ variable "diagnostic_settings" {
     event_hub_authorization_rule_resource_id = optional(string, null)
     event_hub_name                           = optional(string, null)
     marketplace_partner_resource_id          = optional(string, null)
-    target_resource_id                       = optional(string, null)
   }))
   default     = {}
   description = <<DESCRIPTION
@@ -73,7 +72,6 @@ variable "diagnostic_settings" {
   - `event_hub_authorization_rule_resource_id` - (Optional) The resource ID of the event hub authorization rule to send logs and metrics to.
   - `event_hub_name` - (Optional) The name of the event hub. If none is specified, the default event hub will be selected.
   - `marketplace_partner_resource_id` - (Optional) The full ARM resource ID of the Marketplace resource to which you would like to send Diagnostic LogsLogs.
-  - `target_resource_id` - (Optional) The resource ID of the resource to which the diagnostic setting will be attached. If not specified, the diagnostic setting will be attached to the Log Analytics Workspace itself.
   DESCRIPTION
   nullable    = false
 
@@ -85,10 +83,10 @@ variable "diagnostic_settings" {
     condition = alltrue(
       [
         for _, v in var.diagnostic_settings :
-        v.workspace_resource_id != null || v.storage_account_resource_id != null || v.event_hub_authorization_rule_resource_id != null || v.marketplace_partner_resource_id != null || v.target_resource_id != null
+        v.workspace_resource_id != null || v.storage_account_resource_id != null || v.event_hub_authorization_rule_resource_id != null || v.marketplace_partner_resource_id != null
       ]
     )
-    error_message = "At least one of `workspace_resource_id`, `storage_account_resource_id`, `marketplace_partner_resource_id`, `event_hub_authorization_rule_resource_id` or `target_resource_id` must be set."
+    error_message = "At least one of `workspace_resource_id`, `storage_account_resource_id`, `marketplace_partner_resource_id` or `event_hub_authorization_rule_resource_id` must be set."
   }
 }
 
@@ -394,6 +392,27 @@ variable "network_security_perimeter_association" {
 DESCRIPTION
 }
 
+variable "private_endpoint_extensions" {
+  type = map(object({
+    monitor_private_link_scope_key = optional(string)
+    monitor_private_link_scope_exclusion = optional(object({
+      exclude               = bool
+      ingestion_access_mode = string
+      query_access_mode     = string
+    }))
+  }))
+  default     = {}
+  description = <<DESCRIPTION
+  A map of extensions to apply to the private endpoints. The map key must match the key in `var.private_endpoints`.
+  
+  - `monitor_private_link_scope_key` - (Optional) The key of the Monitor Private Link Scope to associate with the private endpoint.
+  - `monitor_private_link_scope_exclusion` - (Optional) The exclusion configuration for the Monitor Private Link Scope.
+    - `exclude` - (Optional) Whether to exclude the private endpoint from the Monitor Private Link Scope. Defaults to `true`.
+    - `ingestion_access_mode` - (Optional) The ingestion access mode for the exclusion. Possible values are `PrivateOnly` and `Open`.
+    - `query_access_mode` - (Optional) The query access mode for the exclusion. Possible values are `PrivateOnly` and `Open`.
+  DESCRIPTION
+}
+
 variable "private_endpoints" {
   type = map(object({
     name = optional(string, null)
@@ -424,12 +443,6 @@ variable "private_endpoints" {
       name               = string
       private_ip_address = string
     })), {})
-    monitor_private_link_scope_exclusion = optional(object({
-      exclude               = optional(bool, true)
-      ingestion_access_mode = optional(string, "PrivateOnly")
-      query_access_mode     = optional(string, "PrivateOnly")
-    }), null)
-    monitor_private_link_scope_key = optional(string, null)
   }))
   default     = {}
   description = <<DESCRIPTION
@@ -450,11 +463,6 @@ variable "private_endpoints" {
   - `ip_configurations` - (Optional) A map of IP configurations to create on the private endpoint. If not specified the platform will create one. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
     - `name` - The name of the IP configuration.
     - `private_ip_address` - The private IP address of the IP configuration.
-  - `monitor_private_link_scope_exclusion` - (Optional) An object to configure the exclusion of the private endpoint from the Monitor Private Link Scope.
-    - `exclude` - (Optional) Whether to exclude the private endpoint from the Monitor Private Link Scope. Defaults to `true`.
-    - `ingestion_access_mode` - (Optional) The ingestion access mode for the exclusion. Possible values are `PrivateOnly` and `Open`. Defaults to `PrivateOnly`.
-    - `query_access_mode` - (Optional) The query access mode for the exclusion. Possible values are `PrivateOnly` and `Open`. Defaults to `PrivateOnly`.
-  - `monitor_private_link_scope_key` - (Optional) The key of the Monitor Private Link Scope to connect to. This key must match a key in `var.monitor_private_link_scope` or `var.monitor_private_link_scoped_resource`.
   DESCRIPTION
   nullable    = false
 }
