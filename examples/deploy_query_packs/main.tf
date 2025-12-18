@@ -70,9 +70,6 @@ module "query_packs" {
     "pack1" = {
       name = "my-query-pack"
       tags = { env = "dev" }
-      lock = {
-        kind = "CanNotDelete"
-      }
     }
   }
 }
