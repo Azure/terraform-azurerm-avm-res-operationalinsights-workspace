@@ -15,7 +15,7 @@ resource "azurerm_monitor_diagnostic_setting" "this" {
   eventhub_authorization_rule_id = each.value.event_hub_authorization_rule_resource_id
   eventhub_name                  = each.value.event_hub_name
   log_analytics_destination_type = each.value.log_analytics_destination_type
-  log_analytics_workspace_id     = each.value.workspace_resource_id
+  log_analytics_workspace_id     = each.value.workspace_resource_id == null && each.value.storage_account_resource_id == null && each.value.event_hub_authorization_rule_resource_id == null && each.value.marketplace_partner_resource_id == null ? azurerm_log_analytics_workspace.this.id : each.value.workspace_resource_id
   partner_solution_id            = each.value.marketplace_partner_resource_id
   storage_account_id             = each.value.storage_account_resource_id
 
@@ -33,12 +33,16 @@ resource "azurerm_monitor_diagnostic_setting" "this" {
       category_group = enabled_log.value
     }
   }
-  dynamic "metric" {
+  dynamic "enabled_metric" {
     for_each = each.value.metric_categories
 
     content {
-      category = metric.value
+      category = enabled_metric.value
     }
+  }
+
+  lifecycle {
+    ignore_changes = [log_analytics_destination_type]
   }
 }
 

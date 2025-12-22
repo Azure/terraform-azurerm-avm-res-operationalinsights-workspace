@@ -1,4 +1,3 @@
-
 terraform {
   required_version = ">= 1.3.0"
 
@@ -16,7 +15,6 @@ terraform {
 
 provider "azurerm" {
   features {}
-  #subscription_id = "xxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 }
 
 # This ensures we have unique CAF compliant names for our resources.
@@ -44,11 +42,34 @@ module "log_analytics_workspace" {
   location            = azurerm_resource_group.rg.location
   name                = "thislaworkspace"
   resource_group_name = azurerm_resource_group.rg.name
-  # source             = "Azure/avm-res-operationalinsights-workspace/azurerm"
-  enable_telemetry = var.enable_telemetry
+  enable_telemetry    = var.enable_telemetry
   log_analytics_workspace_identity = {
     type = "SystemAssigned"
   }
   log_analytics_workspace_retention_in_days = 30
   log_analytics_workspace_sku               = "PerGB2018"
+}
+
+module "query_packs" {
+  source = "../../modules/query_packs"
+
+  location          = azurerm_resource_group.rg.location
+  resource_group_id = azurerm_resource_group.rg.id
+  monitor_queries = {
+    "query1" = {
+      query_pack_key = "pack1"
+      display_name   = "My Query"
+      body           = "Heartbeat | take 10"
+      description    = "Sample query"
+      related = {
+        categories = ["monitor"]
+      }
+    }
+  }
+  monitor_query_packs = {
+    "pack1" = {
+      name = "my-query-pack"
+      tags = { env = "dev" }
+    }
+  }
 }
