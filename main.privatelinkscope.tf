@@ -200,4 +200,3 @@ resource "azurerm_management_lock" "amplscope" {
   name       = try(each.value.lock.name, null) != null ? each.value.lock.name : "${azapi_resource.amplscope[each.key].name}-lock"
   scope      = azapi_resource.amplscope[each.key].id
 }
-

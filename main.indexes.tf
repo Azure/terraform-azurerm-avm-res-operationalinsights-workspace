@@ -33,6 +33,7 @@ resource "azurerm_monitor_diagnostic_setting" "this" {
       category_group = enabled_log.value
     }
   }
+
   dynamic "enabled_metric" {
     for_each = each.value.metric_categories
 
@@ -58,5 +59,3 @@ resource "azurerm_role_assignment" "this" {
   role_definition_name                   = strcontains(lower(each.value.role_definition_id_or_name), lower(local.role_definition_resource_substring)) ? null : each.value.role_definition_id_or_name
   skip_service_principal_aad_check       = each.value.skip_service_principal_aad_check
 }
-
-
