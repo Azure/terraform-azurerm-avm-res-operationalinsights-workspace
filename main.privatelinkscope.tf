@@ -13,12 +13,8 @@ resource "azapi_resource" "amplscope" {
       }
     }
   }
-  create_headers            = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  delete_headers            = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  read_headers              = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   schema_validation_enabled = false
   tags                      = var.tags
-  update_headers            = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 }
 
 data "azapi_resource" "ampls_connections" {
@@ -77,8 +73,6 @@ resource "azapi_update_resource" "amplscope_update" {
       }
     }
   }
-  read_headers   = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  update_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 }
 
 resource "azurerm_monitor_private_link_scoped_service" "this" {
@@ -114,11 +108,7 @@ resource "azapi_resource" "ampls" {
       linkedResourceId = azurerm_log_analytics_workspace.this.id
     }
   }
-  create_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  delete_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  ignore_casing  = true
-  read_headers   = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  update_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  ignore_casing = true
 
   depends_on = [
     time_sleep.wait_for_ampls_update
@@ -189,8 +179,6 @@ resource "azapi_update_resource" "amplscope_update_existing" {
       }
     }
   }
-  read_headers   = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  update_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 }
 
 resource "azurerm_management_lock" "amplscope" {
