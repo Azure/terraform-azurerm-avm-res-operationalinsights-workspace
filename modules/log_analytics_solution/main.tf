@@ -15,6 +15,7 @@ resource "azurerm_log_analytics_solution" "this" {
       promotion_code = plan.value.promotion_code
     }
   }
+
   dynamic "timeouts" {
     for_each = var.log_analytics_solution_timeouts == null ? [] : [var.log_analytics_solution_timeouts]
 

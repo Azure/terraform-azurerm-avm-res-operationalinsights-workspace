@@ -5,7 +5,6 @@
 This deploys the module in its simplest form.
 
 ```hcl
-
 terraform {
   required_version = ">= 1.3.0"
 
