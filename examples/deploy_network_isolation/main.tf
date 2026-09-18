@@ -69,7 +69,7 @@ module "privatednszone" {
 
   domain_name         = "privatelink.monitor.azure.com"
   resource_group_name = azurerm_resource_group.this.name
-  enable_telemetry    = false
+  enable_telemetry    = var.enable_telemetry
   virtual_network_links = {
     vnetlink0 = {
       vnetlinkname = "dnslinktovnet"
@@ -86,7 +86,7 @@ module "law" {
   name                = "thislaworkspace"
   resource_group_name = azurerm_resource_group.this.name
   # source             = "Azure/avm-res-operationalinsights-workspace/azurerm"
-  enable_telemetry = false
+  enable_telemetry = var.enable_telemetry
   log_analytics_workspace_identity = {
     type = "SystemAssigned"
   }

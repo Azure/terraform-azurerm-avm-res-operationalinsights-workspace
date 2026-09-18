@@ -57,7 +57,7 @@ module "log_analytics_workspace" {
   location            = azurerm_resource_group.rg.location
   name                = "thislaworkspace"
   resource_group_name = azurerm_resource_group.rg.name
-  enable_telemetry    = false
+  enable_telemetry    = var.enable_telemetry
   log_analytics_workspace_identity = {
     type = "SystemAssigned"
   }
@@ -125,7 +125,7 @@ If it is set to false, then no telemetry will be collected.
 
 Type: `bool`
 
-Default: `true`
+Default: `false`
 
 ## Outputs
 
