@@ -21,6 +21,7 @@ resource "azurerm_log_analytics_workspace" "this" {
       identity_ids = identity.value.identity_ids
     }
   }
+
   dynamic "timeouts" {
     for_each = var.log_analytics_workspace_timeouts == null ? [] : [var.log_analytics_workspace_timeouts]
 
@@ -44,7 +45,4 @@ resource "azapi_update_resource" "this" {
       publicNetworkAccessForQuery     = var.log_analytics_workspace_internet_query_enabled == "SecuredByPerimeter" ? "SecuredByPerimeter" : (var.log_analytics_workspace_internet_query_enabled == "true" ? "Enabled" : "Disabled")
     }
   }
-  read_headers   = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  update_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 }
-

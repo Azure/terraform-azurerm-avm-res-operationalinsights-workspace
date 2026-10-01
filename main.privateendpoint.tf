@@ -21,6 +21,7 @@ resource "azurerm_private_endpoint" "this" {
     )
     subresource_names = ["azuremonitor"] # map to each.value.subresource_name if there are multiple services.
   }
+
   dynamic "ip_configuration" {
     for_each = each.value.ip_configurations
 
@@ -31,6 +32,7 @@ resource "azurerm_private_endpoint" "this" {
       subresource_name   = "privatelink" # map to each.value.subresource_name if there are multiple services.
     }
   }
+
   dynamic "private_dns_zone_group" {
     for_each = length(each.value.private_dns_zone_resource_ids) > 0 ? ["this"] : []
 
@@ -63,6 +65,7 @@ resource "azurerm_private_endpoint" "this_unmanaged" {
     )
     subresource_names = ["azuremonitor"] # map to each.value.subresource_name if there are multiple services.
   }
+
   dynamic "ip_configuration" {
     for_each = each.value.ip_configurations
 
