@@ -35,7 +35,7 @@ provider "azurerm" {
 # This ensures we have unique CAF compliant names for our resources.
 module "naming" {
   source  = "Azure/naming/azurerm"
-  version = "0.4.1"
+  version = "0.4.3"
 }
 
 # This picks a random region from the list of regions.
@@ -145,7 +145,7 @@ Version:
 
 Source: Azure/naming/azurerm
 
-Version: 0.4.1
+Version: 0.4.3
 
 ### <a name="module_query_packs"></a> [query\_packs](#module\_query\_packs)
 
