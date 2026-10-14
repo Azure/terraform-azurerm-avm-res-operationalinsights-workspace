@@ -3,7 +3,7 @@ resource "azapi_resource" "tables" {
 
   name      = each.value.name
   parent_id = each.value.resource_id != null ? each.value.resource_id : azurerm_log_analytics_workspace.this.id
-  type      = "Microsoft.OperationalInsights/workspaces/tables@2022-10-01"
+  type      = var.resource_types.operationalinsights_workspaces_tables
   body = {
     properties = {
       for k, v in {
@@ -20,7 +20,20 @@ resource "azapi_resource" "tables" {
       } : k => v if v != null
     }
   }
+  ignore_body_changes       = length(var.ignore_body_changes.operationalinsights_workspaces_tables) > 0 ? var.ignore_body_changes.operationalinsights_workspaces_tables : null
+  response_export_values    = []
+  retry                     = var.retry
   schema_validation_enabled = false
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+    content {
+      create = timeouts.value.create
+      read   = timeouts.value.read
+      update = timeouts.value.update
+      delete = timeouts.value.delete
+    }
+  }
 }
 
 resource "azapi_update_resource" "tables" {
@@ -28,7 +41,7 @@ resource "azapi_update_resource" "tables" {
 
   name      = each.value.name
   parent_id = each.value.resource_id != null ? each.value.resource_id : azurerm_log_analytics_workspace.this.id
-  type      = "Microsoft.OperationalInsights/workspaces/tables@2022-10-01"
+  type      = var.resource_types.operationalinsights_workspaces_tables
   body = {
     properties = {
       for k, v in {
@@ -43,6 +56,18 @@ resource "azapi_update_resource" "tables" {
           } : sk => sv if sv != null
         }
       } : k => v if v != null
+    }
+  }
+  response_export_values = []
+  retry                  = var.retry
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+    content {
+      create = timeouts.value.create
+      read   = timeouts.value.read
+      update = timeouts.value.update
+      delete = timeouts.value.delete
     }
   }
 }

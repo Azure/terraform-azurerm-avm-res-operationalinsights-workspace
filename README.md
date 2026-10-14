@@ -4,6 +4,14 @@
 
 This repo is to deploy an Log Analytics Workspace.
 
+Private endpoints retain their existing resource addresses, names, and defaults.
+`private_endpoints_manage_dns_zone_group` defaults to `true`; an explicit
+`private_endpoint_extensions[key].manage_dns_zone_group` takes precedence.
+Omitted service names default to `azuremonitor`; omitted IP configuration member
+and subresource names retain `privatelink`. Endpoint resource groups accept names
+or resource IDs. Endpoint role assignments and locks are applied when supplied;
+these previously declared settings were not implemented.
+
 Major version Zero (0.y.z) is for initial development. Anything MAY change at any time. The module SHOULD NOT be considered stable till at least it is major version one (1.0.0) or greater. Changes will always be via new versions being published and no changes will be made to existing published versions. For more details please go to <https://semver.org/>
 
 <!-- markdownlint-disable MD033 -->
@@ -31,6 +39,8 @@ The following resources are used by this module:
 - [azapi_resource.amplscope](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.data_export](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.nsp_association](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.private_endpoint_locks](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.private_endpoint_role_assignments](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.tables](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_update_resource.amplscope_update](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/update_resource) (resource)
 - [azapi_update_resource.amplscope_update_existing](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/update_resource) (resource)
@@ -151,6 +161,38 @@ If it is set to false, then no telemetry will be collected.
 Type: `bool`
 
 Default: `true`
+
+### <a name="input_ignore_body_changes"></a> [ignore\_body\_changes](#input\_ignore\_body\_changes)
+
+Description: Body-relative dot paths to ignore on AzAPI resources that support this argument.  
+The provider does not support this setting on `azapi_update_resource`.  
+Changes take effect only after apply.  
+Ignored configuration is not sent to Azure until its path is removed.  
+Non-empty lists require Terraform 1.11 or later.
+
+- `authorization_locks` - Paths ignored on private endpoint management locks.
+- `authorization_role_assignments` - Paths ignored on private endpoint role assignments.
+- `insights_private_link_scopes` - Paths ignored on newly managed Monitor Private Link Scopes.
+- `insights_private_link_scopes_scoped_resources` - Paths ignored on scoped resources.
+- `network_network_security_perimeters_resource_associations` - Paths ignored on NSP associations.
+- `operationalinsights_workspaces_data_exports` - Paths ignored on workspace data exports.
+- `operationalinsights_workspaces_tables` - Paths ignored on newly managed workspace tables.
+
+Type:
+
+```hcl
+object({
+    authorization_locks                                       = optional(list(string), [])
+    authorization_role_assignments                            = optional(list(string), [])
+    insights_private_link_scopes                              = optional(list(string), [])
+    insights_private_link_scopes_scoped_resources             = optional(list(string), [])
+    network_network_security_perimeters_resource_associations = optional(list(string), [])
+    operationalinsights_workspaces_data_exports               = optional(list(string), [])
+    operationalinsights_workspaces_tables                     = optional(list(string), [])
+  })
+```
+
+Default: `{}`
 
 ### <a name="input_lock"></a> [lock](#input\_lock)
 
@@ -503,7 +545,7 @@ Description:   A map of extensions to apply to the private endpoints. The map ke
     - `exclude` - (Optional) Whether to exclude the private endpoint from the Monitor Private Link Scope. Defaults to `true`.
     - `ingestion_access_mode` - (Optional) The ingestion access mode for the exclusion. Possible values are `PrivateOnly` and `Open`. Defaults to `PrivateOnly`.
     - `query_access_mode` - (Optional) The query access mode for the exclusion. Possible values are `PrivateOnly` and `Open`. Defaults to `PrivateOnly`.
-  - `manage_dns_zone_group` - (Optional) Whether to manage private DNS zone groups with this module. If set to false, you must manage private DNS zone groups externally, e.g. using Azure Policy. Defaults to `true`.
+  - `manage_dns_zone_group` - (Optional) Overrides `private_endpoints_manage_dns_zone_group` for this endpoint. Omit it to inherit the global setting, which defaults to `true`.
 
 Type:
 
@@ -515,7 +557,7 @@ map(object({
       ingestion_access_mode = optional(string, "PrivateOnly")
       query_access_mode     = optional(string, "PrivateOnly")
     }), null)
-    manage_dns_zone_group = optional(bool, true)
+    manage_dns_zone_group = optional(bool)
   }))
 ```
 
@@ -523,23 +565,37 @@ Default: `{}`
 
 ### <a name="input_private_endpoints"></a> [private\_endpoints](#input\_private\_endpoints)
 
-Description:   A map of private endpoints to create on the resource. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
+Description: A map of private endpoints to create on the Monitor Private Link Scope. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
 
-  - `name` - (Optional) The name of the private endpoint. One will be generated if not set.
-  - `role_assignments` - (Optional) A map of role assignments to create on the private endpoint. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time. See `var.role_assignments` for more information.
-  - `lock` - (Optional) The lock level to apply to the private endpoint. Default is `None`. Possible values are `None`, `CanNotDelete`, and `ReadOnly`.
-  - `tags` - (Optional) A mapping of tags to assign to the private endpoint.
-  - `subnet_resource_id` - The resource ID of the subnet to deploy the private endpoint in.
-  - `private_dns_zone_group_name` - (Optional) The name of the private DNS zone group. One will be generated if not set.
-  - `private_dns_zone_resource_ids` - (Optional) A set of resource IDs of private DNS zones to associate with the private endpoint. If not set, no zone groups will be created and the private endpoint will not be associated with any private DNS zones. DNS records must be managed external to this module.
-  - `application_security_group_resource_ids` - (Optional) A map of resource IDs of application security groups to associate with the private endpoint. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
-  - `private_service_connection_name` - (Optional) The name of the private service connection. One will be generated if not set.
-  - `network_interface_name` - (Optional) The name of the network interface. One will be generated if not set.
-  - `location` - (Optional) The Azure location where the resources will be deployed. Defaults to the location of the resource group.
-  - `resource_group_name` - (Optional) The resource group where the resources will be deployed. Defaults to the resource group of the Key Vault.
-  - `ip_configurations` - (Optional) A map of IP configurations to create on the private endpoint. If not specified the platform will create one. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
-    - `name` - The name of the IP configuration.
-    - `private_ip_address` - The private IP address of the IP configuration.
+- `name` - (Optional) The name of the private endpoint. One will be generated if not set.
+- `role_assignments` - (Optional) A map of role assignments to create on the private endpoint. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time. See `var.role_assignments` for more information.
+  - `name` - (Optional) The name of the role assignment. If not set, a random UUID will be generated. Changing this forces the creation of a new resource.
+  - `role_definition_id_or_name` - The ID or name of the role definition to assign to the principal.
+  - `principal_id` - The ID of the principal to assign the role to.
+  - `description` - (Optional) The description of the role assignment.
+  - `skip_service_principal_aad_check` - (Optional) If set to true, skips the Azure Active Directory check for the service principal in the tenant. Defaults to false.
+  - `condition` - (Optional) The condition which will be used to scope the role assignment.
+  - `condition_version` - (Optional) The version of the condition syntax. Leave as `null` if you are not using a condition, if you are then valid values are '2.0'.
+  - `delegated_managed_identity_resource_id` - (Optional) The delegated Azure Resource Id which contains a Managed Identity. Changing this forces a new resource to be created. This field is only used in cross-tenant scenario.
+  - `principal_type` - (Optional) The type of the `principal_id`. Possible values are `User`, `Group` and `ServicePrincipal`. It is necessary to explicitly set this attribute when creating role assignments if the principal creating the assignment is constrained by ABAC rules that filters on the PrincipalType attribute.
+- `lock` - (Optional) The lock level to apply to the private endpoint. Default is `None`. Possible values are `None`, `CanNotDelete`, and `ReadOnly`.
+  - `kind` - (Required) The type of lock. Possible values are `\"CanNotDelete\"` and `\"ReadOnly\"`.
+  - `name` - (Optional) The name of the lock. If not specified, a name will be generated based on the `kind` value. Changing this forces the creation of a new resource.
+  - `notes` - (Optional) Notes about the lock. This value maps to `Microsoft.Authorization/locks.properties.notes`.
+- `tags` - (Optional) A mapping of tags to assign to the private endpoint.
+- `subnet_resource_id` - The resource ID of the subnet to deploy the private endpoint in.
+- `subresource_name` (Optional) - The name of the sub resource for the private endpoint.
+- `private_dns_zone_group_name` - (Optional) The name of the private DNS zone group. One will be generated if not set.
+- `private_dns_zone_resource_ids` - (Optional) A set of resource IDs of private DNS zones to associate with the private endpoint. If not set, no zone groups will be created and the private endpoint will not be associated with any private DNS zones. DNS records must be managed external to this module.
+- `application_security_group_associations` - (Optional) A map of resource IDs of application security groups to associate with the private endpoint. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
+- `private_service_connection_name` - (Optional) The name of the private service connection. One will be generated if not set.
+- `network_interface_name` - (Optional) The name of the network interface. One will be generated if not set.
+- `location` - (Optional) The Azure location where the resources will be deployed. Defaults to the location of the resource group.
+- `resource_group_name` - (Optional) The resource group resource ID where the private endpoint resources will be deployed. Defaults to the resource group of the parent resource.
+- `ip_configurations` - (Optional) A map of IP configurations to create on the private endpoint. If not specified the platform will create one. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
+  - `name` - The name of the IP configuration.
+  - `private_ip_address` - The private IP address of the IP configuration.
+  - `member_name` - (Optional) The private IP configuration member name.
 
 Type:
 
@@ -547,6 +603,7 @@ Type:
 map(object({
     name = optional(string, null)
     role_assignments = optional(map(object({
+      name                                   = optional(string, null)
       role_definition_id_or_name             = string
       principal_id                           = string
       description                            = optional(string, null)
@@ -557,11 +614,13 @@ map(object({
       principal_type                         = optional(string, null)
     })), {})
     lock = optional(object({
-      kind = string
-      name = optional(string, null)
+      kind  = string
+      name  = optional(string, null)
+      notes = optional(string, null)
     }), null)
     tags                                    = optional(map(string), null)
     subnet_resource_id                      = string
+    subresource_name                        = optional(string, null)
     private_dns_zone_group_name             = optional(string, "default")
     private_dns_zone_resource_ids           = optional(set(string), [])
     application_security_group_associations = optional(map(string), {})
@@ -572,11 +631,71 @@ map(object({
     ip_configurations = optional(map(object({
       name               = string
       private_ip_address = string
+      member_name        = optional(string)
     })), {})
   }))
 ```
 
 Default: `{}`
+
+### <a name="input_private_endpoints_manage_dns_zone_group"></a> [private\_endpoints\_manage\_dns\_zone\_group](#input\_private\_endpoints\_manage\_dns\_zone\_group)
+
+Description: Whether to manage private DNS zone groups with this module. If set to false, you must manage private DNS zone groups externally, e.g. using Azure Policy.
+
+Type: `bool`
+
+Default: `true`
+
+### <a name="input_resource_types"></a> [resource\_types](#input\_resource\_types)
+
+Description: AzAPI resource types and API versions. Defaults preserve the existing API versions.
+
+- `authorization_locks` - Private endpoint management locks.
+- `authorization_role_assignments` - Private endpoint role assignments.
+- `insights_private_link_scopes` - Monitor Private Link Scopes and their updates.
+- `insights_private_link_scopes_scoped_resources` - Resources connected to existing scopes.
+- `network_network_security_perimeters_resource_associations` - NSP associations.
+- `operationalinsights_workspaces` - Workspace network-access updates.
+- `operationalinsights_workspaces_data_exports` - Workspace data exports.
+- `operationalinsights_workspaces_tables` - Workspace tables and table updates.
+
+Type:
+
+```hcl
+object({
+    authorization_locks                                       = optional(string, "Microsoft.Authorization/locks@2020-05-01")
+    authorization_role_assignments                            = optional(string, "Microsoft.Authorization/roleAssignments@2022-04-01")
+    insights_private_link_scopes                              = optional(string, "microsoft.insights/privateLinkScopes@2021-07-01-preview")
+    insights_private_link_scopes_scoped_resources             = optional(string, "Microsoft.Insights/privateLinkScopes/scopedResources@2021-07-01-preview")
+    network_network_security_perimeters_resource_associations = optional(string, "Microsoft.Network/networkSecurityPerimeters/resourceAssociations@2023-08-01-preview")
+    operationalinsights_workspaces                            = optional(string, "Microsoft.OperationalInsights/workspaces@2023-09-01")
+    operationalinsights_workspaces_data_exports               = optional(string, "Microsoft.OperationalInsights/workspaces/dataExports@2020-08-01")
+    operationalinsights_workspaces_tables                     = optional(string, "Microsoft.OperationalInsights/workspaces/tables@2022-10-01")
+  })
+```
+
+Default: `{}`
+
+### <a name="input_retry"></a> [retry](#input\_retry)
+
+Description: Retry configuration applied to every supported AzAPI resource declared by this module.  
+Defaults to null (no custom retry).
+
+- `error_message_regex` - Error-message patterns that trigger a retry.
+- `interval_seconds` - Initial interval between retries in seconds.
+- `max_interval_seconds` - Maximum interval between retries in seconds.
+
+Type:
+
+```hcl
+object({
+    error_message_regex  = optional(list(string))
+    interval_seconds     = optional(number)
+    max_interval_seconds = optional(number)
+  })
+```
+
+Default: `null`
 
 ### <a name="input_role_assignments"></a> [role\_assignments](#input\_role\_assignments)
 
@@ -612,9 +731,32 @@ Default: `{}`
 
 ### <a name="input_tags"></a> [tags](#input\_tags)
 
-Description: (Optional) Tags of the resource.
+Description: (Optional) Tags of the resource and its Network Security Perimeter association.
 
 Type: `map(string)`
+
+Default: `null`
+
+### <a name="input_timeouts"></a> [timeouts](#input\_timeouts)
+
+Description: Per-operation timeouts applied to every supported AzAPI resource declared by this module.  
+Defaults to null (provider defaults). Values are Go duration strings.
+
+- `create` - Create timeout.
+- `read` - Read timeout.
+- `update` - Update timeout.
+- `delete` - Delete timeout.
+
+Type:
+
+```hcl
+object({
+    create = optional(string)
+    read   = optional(string)
+    update = optional(string)
+    delete = optional(string)
+  })
+```
 
 Default: `null`
 
@@ -639,7 +781,13 @@ Description: This is the full output for the Log Analytics resource ID. This is 
 
 ## Modules
 
-No modules.
+The following Modules are called:
+
+### <a name="module_avm_interfaces"></a> [avm\_interfaces](#module\_avm\_interfaces)
+
+Source: Azure/avm-utl-interfaces/azure
+
+Version: 0.7.0
 
 <!-- markdownlint-disable-next-line MD041 -->
 ## Data Collection

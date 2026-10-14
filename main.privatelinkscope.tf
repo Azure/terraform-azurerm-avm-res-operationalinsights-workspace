@@ -4,7 +4,7 @@ resource "azapi_resource" "amplscope" {
   location  = "global"
   name      = each.value.name != null ? each.value.name : "law_pl_scope"
   parent_id = each.value.resource_id
-  type      = "microsoft.insights/privateLinkScopes@2021-07-01-preview"
+  type      = var.resource_types.insights_private_link_scopes
   body = {
     properties = {
       accessModeSettings = {
@@ -13,15 +13,28 @@ resource "azapi_resource" "amplscope" {
       }
     }
   }
+  ignore_body_changes       = length(var.ignore_body_changes.insights_private_link_scopes) > 0 ? var.ignore_body_changes.insights_private_link_scopes : null
+  response_export_values    = []
+  retry                     = var.retry
   schema_validation_enabled = false
   tags                      = var.tags
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+    content {
+      create = timeouts.value.create
+      read   = timeouts.value.read
+      update = timeouts.value.update
+      delete = timeouts.value.delete
+    }
+  }
 }
 
 data "azapi_resource" "ampls_connections" {
   for_each = var.monitor_private_link_scope
 
   resource_id            = azapi_resource.amplscope[each.key].id
-  type                   = "microsoft.insights/privateLinkScopes@2021-07-01-preview"
+  type                   = var.resource_types.insights_private_link_scopes
   response_export_values = ["properties.privateEndpointConnections"]
 
   depends_on = [
@@ -34,7 +47,7 @@ resource "azapi_update_resource" "amplscope_update" {
   for_each = var.monitor_private_link_scope
 
   resource_id = azapi_resource.amplscope[each.key].id
-  type        = "microsoft.insights/privateLinkScopes@2021-07-01-preview"
+  type        = var.resource_types.insights_private_link_scopes
   body = {
     properties = {
       accessModeSettings = {
@@ -49,7 +62,7 @@ resource "azapi_update_resource" "amplscope_update" {
           flatten([
             for k, v in var.private_endpoints : [
               for connection_name in [
-                try([for c in data.azapi_resource.ampls_connections[each.key].output.properties.privateEndpointConnections : c.name if lower(c.properties.privateEndpoint.id) == lower(try(var.private_endpoint_extensions[k].manage_dns_zone_group, true) ? azurerm_private_endpoint.this[k].id : azurerm_private_endpoint.this_unmanaged[k].id)][0], (v.private_service_connection_name != null ? v.private_service_connection_name : "pse-${var.name}"))
+                try([for c in data.azapi_resource.ampls_connections[each.key].output.properties.privateEndpointConnections : c.name if lower(c.properties.privateEndpoint.id) == lower(local.private_endpoint_manage_dns_zone_group[k] ? azurerm_private_endpoint.this[k].id : azurerm_private_endpoint.this_unmanaged[k].id)][0], (v.private_service_connection_name != null ? v.private_service_connection_name : "pse-${var.name}"))
                 ] : {
                 ingestionAccessMode           = try(var.private_endpoint_extensions[k].monitor_private_link_scope_exclusion, null) == null ? "PrivateOnly" : var.private_endpoint_extensions[k].monitor_private_link_scope_exclusion.ingestion_access_mode
                 privateEndpointConnectionName = connection_name
@@ -71,6 +84,18 @@ resource "azapi_update_resource" "amplscope_update" {
         ingestionAccessMode = each.value.ingestion_access_mode
         queryAccessMode     = each.value.query_access_mode
       }
+    }
+  }
+  response_export_values = []
+  retry                  = var.retry
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+    content {
+      create = timeouts.value.create
+      read   = timeouts.value.read
+      update = timeouts.value.update
+      delete = timeouts.value.delete
     }
   }
 }
@@ -102,13 +127,26 @@ resource "azapi_resource" "ampls" {
 
   name      = each.value.name != null ? each.value.name : azurerm_log_analytics_workspace.this.name
   parent_id = each.value.resource_id
-  type      = "Microsoft.Insights/privateLinkScopes/scopedResources@2021-07-01-preview"
+  type      = var.resource_types.insights_private_link_scopes_scoped_resources
   body = {
     properties = {
       linkedResourceId = azurerm_log_analytics_workspace.this.id
     }
   }
-  ignore_casing = true
+  ignore_body_changes    = length(var.ignore_body_changes.insights_private_link_scopes_scoped_resources) > 0 ? var.ignore_body_changes.insights_private_link_scopes_scoped_resources : null
+  ignore_casing          = true
+  response_export_values = []
+  retry                  = var.retry
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+    content {
+      create = timeouts.value.create
+      read   = timeouts.value.read
+      update = timeouts.value.update
+      delete = timeouts.value.delete
+    }
+  }
 
   depends_on = [
     time_sleep.wait_for_ampls_update
@@ -119,7 +157,7 @@ data "azapi_resource" "ampls_existing" {
   for_each = var.monitor_private_link_scoped_resource
 
   resource_id            = each.value.resource_id
-  type                   = "microsoft.insights/privateLinkScopes@2021-07-01-preview"
+  type                   = var.resource_types.insights_private_link_scopes
   response_export_values = ["properties.accessModeSettings"]
 }
 
@@ -127,7 +165,7 @@ data "azapi_resource" "ampls_connections_existing" {
   for_each = var.monitor_private_link_scoped_resource
 
   resource_id            = each.value.resource_id
-  type                   = "microsoft.insights/privateLinkScopes@2021-07-01-preview"
+  type                   = var.resource_types.insights_private_link_scopes
   response_export_values = ["properties.privateEndpointConnections"]
 
   depends_on = [
@@ -140,7 +178,7 @@ resource "azapi_update_resource" "amplscope_update_existing" {
   for_each = var.monitor_private_link_scoped_resource
 
   resource_id = lower(each.value.resource_id)
-  type        = "microsoft.insights/privateLinkScopes@2021-07-01-preview"
+  type        = var.resource_types.insights_private_link_scopes
   body = {
     properties = {
       accessModeSettings = {
@@ -155,7 +193,7 @@ resource "azapi_update_resource" "amplscope_update_existing" {
           flatten([
             for k, v in var.private_endpoints : [
               for connection_name in [
-                try([for c in data.azapi_resource.ampls_connections_existing[each.key].output.properties.privateEndpointConnections : c.name if lower(c.properties.privateEndpoint.id) == lower(try(var.private_endpoint_extensions[k].manage_dns_zone_group, true) ? azurerm_private_endpoint.this[k].id : azurerm_private_endpoint.this_unmanaged[k].id)][0], (v.private_service_connection_name != null ? v.private_service_connection_name : "pse-${var.name}"))
+                try([for c in data.azapi_resource.ampls_connections_existing[each.key].output.properties.privateEndpointConnections : c.name if lower(c.properties.privateEndpoint.id) == lower(local.private_endpoint_manage_dns_zone_group[k] ? azurerm_private_endpoint.this[k].id : azurerm_private_endpoint.this_unmanaged[k].id)][0], (v.private_service_connection_name != null ? v.private_service_connection_name : "pse-${var.name}"))
                 ] : {
                 ingestionAccessMode           = try(var.private_endpoint_extensions[k].monitor_private_link_scope_exclusion, null) == null ? "PrivateOnly" : var.private_endpoint_extensions[k].monitor_private_link_scope_exclusion.ingestion_access_mode
                 privateEndpointConnectionName = connection_name
@@ -177,6 +215,18 @@ resource "azapi_update_resource" "amplscope_update_existing" {
         ingestionAccessMode = data.azapi_resource.ampls_existing[each.key].output.properties.accessModeSettings.ingestionAccessMode
         queryAccessMode     = data.azapi_resource.ampls_existing[each.key].output.properties.accessModeSettings.queryAccessMode
       }
+    }
+  }
+  response_export_values = []
+  retry                  = var.retry
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+    content {
+      create = timeouts.value.create
+      read   = timeouts.value.read
+      update = timeouts.value.update
+      delete = timeouts.value.delete
     }
   }
 }
