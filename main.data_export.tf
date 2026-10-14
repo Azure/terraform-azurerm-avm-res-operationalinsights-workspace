@@ -3,7 +3,7 @@ resource "azapi_resource" "data_export" {
 
   name      = each.value.name
   parent_id = azurerm_log_analytics_workspace.this.id
-  type      = "Microsoft.OperationalInsights/workspaces/dataExports@2020-08-01"
+  type      = var.resource_types.operationalinsights_workspaces_data_exports
   body = {
     properties = {
       destination = {
@@ -16,6 +16,19 @@ resource "azapi_resource" "data_export" {
       }
       tableNames = each.value.table_names
       enable     = each.value.enabled
+    }
+  }
+  ignore_body_changes    = length(var.ignore_body_changes.operationalinsights_workspaces_data_exports) > 0 ? var.ignore_body_changes.operationalinsights_workspaces_data_exports : null
+  response_export_values = []
+  retry                  = var.retry
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+    content {
+      create = timeouts.value.create
+      read   = timeouts.value.read
+      update = timeouts.value.update
+      delete = timeouts.value.delete
     }
   }
 }

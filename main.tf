@@ -38,11 +38,23 @@ resource "azapi_update_resource" "this" {
   count = (var.log_analytics_workspace_internet_ingestion_enabled == "SecuredByPerimeter" || var.log_analytics_workspace_internet_query_enabled == "SecuredByPerimeter") ? 1 : 0
 
   resource_id = azurerm_log_analytics_workspace.this.id
-  type        = "Microsoft.OperationalInsights/workspaces@2023-09-01"
+  type        = var.resource_types.operationalinsights_workspaces
   body = {
     properties = {
       publicNetworkAccessForIngestion = var.log_analytics_workspace_internet_ingestion_enabled == "SecuredByPerimeter" ? "SecuredByPerimeter" : (var.log_analytics_workspace_internet_ingestion_enabled == "true" ? "Enabled" : "Disabled")
       publicNetworkAccessForQuery     = var.log_analytics_workspace_internet_query_enabled == "SecuredByPerimeter" ? "SecuredByPerimeter" : (var.log_analytics_workspace_internet_query_enabled == "true" ? "Enabled" : "Disabled")
+    }
+  }
+  response_export_values = []
+  retry                  = var.retry
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+    content {
+      create = timeouts.value.create
+      read   = timeouts.value.read
+      update = timeouts.value.update
+      delete = timeouts.value.delete
     }
   }
 }

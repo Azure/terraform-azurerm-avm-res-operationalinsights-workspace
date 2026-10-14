@@ -3,7 +3,7 @@ resource "azapi_resource" "nsp_association" {
 
   name      = "nsp-assoc-${azurerm_log_analytics_workspace.this.name}"
   parent_id = var.network_security_perimeter_association.resource_id
-  type      = "Microsoft.Network/networkSecurityPerimeters/resourceAssociations@2023-08-01-preview"
+  type      = var.resource_types.network_network_security_perimeters_resource_associations
   body = {
     properties = {
       privateLinkResource = {
@@ -15,5 +15,18 @@ resource "azapi_resource" "nsp_association" {
       accessMode = var.network_security_perimeter_association.access_mode
     }
   }
-  tags = var.tags
+  ignore_body_changes    = length(var.ignore_body_changes.network_network_security_perimeters_resource_associations) > 0 ? var.ignore_body_changes.network_network_security_perimeters_resource_associations : null
+  response_export_values = []
+  retry                  = var.retry
+  tags                   = var.tags
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+    content {
+      create = timeouts.value.create
+      read   = timeouts.value.read
+      update = timeouts.value.update
+      delete = timeouts.value.delete
+    }
+  }
 }
