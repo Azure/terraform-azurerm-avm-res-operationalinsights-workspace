@@ -493,5 +493,5 @@ variable "role_assignments" {
 variable "tags" {
   type        = map(string)
   default     = null
-  description = "(Optional) Tags of the resource."
+  description = "(Optional) Tags of the resource and its Network Security Perimeter association."
 }

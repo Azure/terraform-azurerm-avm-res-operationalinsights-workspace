@@ -612,7 +612,7 @@ Default: `{}`
 
 ### <a name="input_tags"></a> [tags](#input\_tags)
 
-Description: (Optional) Tags of the resource.
+Description: (Optional) Tags of the resource and its Network Security Perimeter association.
 
 Type: `map(string)`
 

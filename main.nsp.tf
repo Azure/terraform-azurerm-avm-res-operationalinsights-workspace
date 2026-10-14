@@ -15,4 +15,5 @@ resource "azapi_resource" "nsp_association" {
       accessMode = var.network_security_perimeter_association.access_mode
     }
   }
+  tags = var.tags
 }
