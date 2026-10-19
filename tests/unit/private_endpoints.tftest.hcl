@@ -38,6 +38,11 @@ mock_provider "azapi" {
       }
     }
   }
+  mock_data "azapi_client_config" {
+    defaults = {
+      subscription_resource_id = "/subscriptions/00000000-0000-0000-0000-000000000000"
+    }
+  }
 }
 
 mock_provider "azurerm" {
@@ -54,10 +59,6 @@ mock_provider "azurerm" {
       id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/privateEndpoints/test-pe"
     }
   }
-}
-
-mock_provider "modtm" {
-  alias = "mocked"
 }
 
 mock_provider "random" {
@@ -108,9 +109,9 @@ run "legacy_defaults_and_managed_addresses" {
   providers = {
     azapi   = azapi.mocked
     azurerm = azurerm.mocked
-    modtm   = modtm.mocked
-    random  = random.mocked
-    time    = time.mocked
+
+    random = random.mocked
+    time   = time.mocked
   }
 
   assert {
@@ -140,9 +141,9 @@ run "global_dns_false_with_scope_only_extension" {
   providers = {
     azapi   = azapi.mocked
     azurerm = azurerm.mocked
-    modtm   = modtm.mocked
-    random  = random.mocked
-    time    = time.mocked
+
+    random = random.mocked
+    time   = time.mocked
   }
   variables {
     private_endpoints_manage_dns_zone_group = false
@@ -170,9 +171,9 @@ run "explicit_legacy_dns_overrides_global" {
   providers = {
     azapi   = azapi.mocked
     azurerm = azurerm.mocked
-    modtm   = modtm.mocked
-    random  = random.mocked
-    time    = time.mocked
+
+    random = random.mocked
+    time   = time.mocked
   }
   variables {
     private_endpoints_manage_dns_zone_group = false
@@ -206,9 +207,9 @@ run "canonical_fields_and_legacy_resource_group_names" {
   providers = {
     azapi   = azapi.mocked
     azurerm = azurerm.mocked
-    modtm   = modtm.mocked
-    random  = random.mocked
-    time    = time.mocked
+
+    random = random.mocked
+    time   = time.mocked
   }
   variables {
     private_endpoints = {
@@ -259,9 +260,9 @@ run "new_scope_connection_uses_unmanaged_endpoint" {
   providers = {
     azapi   = azapi.mocked
     azurerm = azurerm.mocked
-    modtm   = modtm.mocked
-    random  = random.mocked
-    time    = time.mocked
+
+    random = random.mocked
+    time   = time.mocked
   }
   variables {
     monitor_private_link_scoped_service_name = "workspace-link"
@@ -288,9 +289,9 @@ run "endpoint_locks_roles_and_azapi_controls" {
   providers = {
     azapi   = azapi.mocked
     azurerm = azurerm.mocked
-    modtm   = modtm.mocked
-    random  = random.mocked
-    time    = time.mocked
+
+    random = random.mocked
+    time   = time.mocked
   }
   variables {
     private_endpoints = {
@@ -354,9 +355,9 @@ run "none_lock_remains_disabled" {
   providers = {
     azapi   = azapi.mocked
     azurerm = azurerm.mocked
-    modtm   = modtm.mocked
-    random  = random.mocked
-    time    = time.mocked
+
+    random = random.mocked
+    time   = time.mocked
   }
   variables {
     private_endpoints = {
@@ -377,9 +378,9 @@ run "invalid_subnet_is_rejected" {
   providers = {
     azapi   = azapi.mocked
     azurerm = azurerm.mocked
-    modtm   = modtm.mocked
-    random  = random.mocked
-    time    = time.mocked
+
+    random = random.mocked
+    time   = time.mocked
   }
   variables {
     private_endpoints = {
@@ -394,9 +395,9 @@ run "invalid_dns_zone_is_rejected" {
   providers = {
     azapi   = azapi.mocked
     azurerm = azurerm.mocked
-    modtm   = modtm.mocked
-    random  = random.mocked
-    time    = time.mocked
+
+    random = random.mocked
+    time   = time.mocked
   }
   variables {
     private_endpoints = {
@@ -414,9 +415,9 @@ run "invalid_asg_is_rejected" {
   providers = {
     azapi   = azapi.mocked
     azurerm = azurerm.mocked
-    modtm   = modtm.mocked
-    random  = random.mocked
-    time    = time.mocked
+
+    random = random.mocked
+    time   = time.mocked
   }
   variables {
     private_endpoints = {
@@ -434,9 +435,9 @@ run "invalid_delegated_identity_is_rejected" {
   providers = {
     azapi   = azapi.mocked
     azurerm = azurerm.mocked
-    modtm   = modtm.mocked
-    random  = random.mocked
-    time    = time.mocked
+
+    random = random.mocked
+    time   = time.mocked
   }
   variables {
     private_endpoints = {
