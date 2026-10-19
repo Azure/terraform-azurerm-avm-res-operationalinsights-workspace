@@ -2,6 +2,10 @@ terraform {
   required_version = ">= 1.3.0"
 
   required_providers {
+    azapi = {
+      source  = "Azure/azapi"
+      version = "~> 2.12"
+    }
     azurerm = {
       source  = "hashicorp/azurerm"
       version = ">= 4.36.0, < 5.0.0"
@@ -20,8 +24,8 @@ provider "azurerm" {
 
 # This ensures we have unique CAF compliant names for our resources.
 module "naming" {
-  source  = "Azure/naming/azurerm"
-  version = "0.4.1"
+  source  = "Azure/avm-utl-naming/azure"
+  version = "0.2.0"
 }
 
 # This picks a random region from the list of regions.
@@ -39,6 +43,9 @@ resource "azurerm_resource_group" "rg" {
 # This is the module call
 module "log_analytics_workspace" {
   source = "../../"
+  providers = {
+    azapi = azapi
+  }
 
   location            = azurerm_resource_group.rg.location
   name                = "thislaworkspace"

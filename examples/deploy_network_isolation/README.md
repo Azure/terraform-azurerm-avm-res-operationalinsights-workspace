@@ -25,6 +25,10 @@ terraform {
       source  = "hashicorp/azurerm"
       version = ">= 4.36.0, < 5.0.0"
     }
+    modtm = {
+      source  = "registry.terraform.io/azure/modtm"
+      version = "~> 0.3"
+    }
     random = {
       source  = "hashicorp/random"
       version = "~> 3.5"
@@ -48,8 +52,8 @@ provider "azapi" {
 
 # This ensures we have unique CAF compliant names for our resources.
 module "naming" {
-  source  = "Azure/naming/azurerm"
-  version = "0.4.1"
+  source  = "Azure/avm-utl-naming/azure"
+  version = "0.2.0"
 }
 
 # This picks a random region from the list of regions.
@@ -79,8 +83,9 @@ resource "azurerm_subnet" "this" {
 }
 
 module "privatednszone" {
-  source  = "Azure/avm-res-network-privatednszone/azurerm"
-  version = "0.3.2"
+  source    = "Azure/avm-res-network-privatednszone/azurerm"
+  version   = "0.3.2"
+  providers = { modtm = modtm }
 
   domain_name         = "privatelink.monitor.azure.com"
   resource_group_name = azurerm_resource_group.this.name
@@ -96,6 +101,9 @@ module "privatednszone" {
 # This is the module call
 module "law" {
   source = "../../"
+  providers = {
+    azapi = azapi
+  }
 
   location            = azurerm_resource_group.this.location
   name                = "thislaworkspace"
@@ -134,6 +142,8 @@ The following requirements are needed by this module:
 - <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.0)
 
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 4.36.0, < 5.0.0)
+
+- <a name="requirement_modtm"></a> [modtm](#requirement\_modtm) (~> 0.3)
 
 - <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.5)
 
@@ -181,9 +191,9 @@ Version:
 
 ### <a name="module_naming"></a> [naming](#module\_naming)
 
-Source: Azure/naming/azurerm
+Source: Azure/avm-utl-naming/azure
 
-Version: 0.4.1
+Version: 0.2.0
 
 ### <a name="module_privatednszone"></a> [privatednszone](#module\_privatednszone)
 

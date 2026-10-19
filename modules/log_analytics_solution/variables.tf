@@ -1,3 +1,9 @@
+variable "location" {
+  type        = string
+  description = "The Azure region for this module's resources or telemetry deployment."
+  nullable    = false
+}
+
 variable "log_analytics_solution_location" {
   type        = string
   description = "(Required) Specifies the supported Azure location where the resource exists. Changing this forces a new resource to be created."
@@ -39,6 +45,17 @@ variable "log_analytics_solution_workspace_name" {
 variable "log_analytics_solution_workspace_resource_id" {
   type        = string
   description = "(Required) The full resource ID of the Log Analytics workspace with which the solution will be linked. Changing this forces a new resource to be created."
+  nullable    = false
+}
+
+variable "enable_telemetry" {
+  type        = bool
+  default     = true
+  description = <<DESCRIPTION
+This variable controls whether or not telemetry is enabled for the module.
+For more information see <https://aka.ms/avm/telemetryinfo>.
+If it is set to false, then no telemetry will be collected.
+DESCRIPTION
   nullable    = false
 }
 

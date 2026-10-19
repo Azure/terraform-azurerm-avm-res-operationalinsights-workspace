@@ -1,5 +1,10 @@
 mock_provider "azapi" {
   alias = "mocked"
+  mock_data "azapi_client_config" {
+    defaults = {
+      subscription_resource_id = "/subscriptions/00000000-0000-0000-0000-000000000000"
+    }
+  }
 }
 
 mock_provider "azurerm" {
@@ -10,10 +15,6 @@ mock_provider "azurerm" {
       id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/test-rg/providers/Microsoft.OperationalInsights/workspaces/test-workspace"
     }
   }
-}
-
-mock_provider "modtm" {
-  alias = "mocked"
 }
 
 mock_provider "random" {
@@ -37,9 +38,9 @@ run "association_omitted_by_default" {
   providers = {
     azapi   = azapi.mocked
     azurerm = azurerm.mocked
-    modtm   = modtm.mocked
-    random  = random.mocked
-    time    = time.mocked
+
+    random = random.mocked
+    time   = time.mocked
   }
 
   assert {
@@ -59,9 +60,9 @@ run "association_inherits_null_tags" {
   providers = {
     azapi   = azapi.mocked
     azurerm = azurerm.mocked
-    modtm   = modtm.mocked
-    random  = random.mocked
-    time    = time.mocked
+
+    random = random.mocked
+    time   = time.mocked
   }
 
   variables {
@@ -88,9 +89,9 @@ run "association_inherits_empty_tags" {
   providers = {
     azapi   = azapi.mocked
     azurerm = azurerm.mocked
-    modtm   = modtm.mocked
-    random  = random.mocked
-    time    = time.mocked
+
+    random = random.mocked
+    time   = time.mocked
   }
 
   variables {
@@ -118,9 +119,9 @@ run "association_inherits_consumer_tags" {
   providers = {
     azapi   = azapi.mocked
     azurerm = azurerm.mocked
-    modtm   = modtm.mocked
-    random  = random.mocked
-    time    = time.mocked
+
+    random = random.mocked
+    time   = time.mocked
   }
 
   variables {
@@ -158,9 +159,9 @@ run "association_preserves_explicit_access_mode" {
   providers = {
     azapi   = azapi.mocked
     azurerm = azurerm.mocked
-    modtm   = modtm.mocked
-    random  = random.mocked
-    time    = time.mocked
+
+    random = random.mocked
+    time   = time.mocked
   }
 
   variables {

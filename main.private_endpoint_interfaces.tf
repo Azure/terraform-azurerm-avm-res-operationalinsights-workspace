@@ -1,7 +1,8 @@
 module "avm_interfaces" {
   source  = "Azure/avm-utl-interfaces/azure"
-  version = "0.7.0"
+  version = "0.9.0"
 
+  location         = var.location
   enable_telemetry = false
   private_endpoints = {
     for k, v in var.private_endpoints : k => merge(v, {
