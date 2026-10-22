@@ -25,6 +25,7 @@ terraform {
       source  = "hashicorp/azurerm"
       version = ">= 4.36.0, < 5.0.0"
     }
+    # tflint-ignore: terraform_unused_required_providers
     modtm = {
       source  = "registry.terraform.io/azure/modtm"
       version = "~> 0.3"
@@ -83,9 +84,8 @@ resource "azurerm_subnet" "this" {
 }
 
 module "privatednszone" {
-  source    = "Azure/avm-res-network-privatednszone/azurerm"
-  version   = "0.3.2"
-  providers = { modtm = modtm }
+  source  = "Azure/avm-res-network-privatednszone/azurerm"
+  version = "0.3.2"
 
   domain_name         = "privatelink.monitor.azure.com"
   resource_group_name = azurerm_resource_group.this.name
@@ -101,9 +101,6 @@ module "privatednszone" {
 # This is the module call
 module "law" {
   source = "../../"
-  providers = {
-    azapi = azapi
-  }
 
   location            = azurerm_resource_group.this.location
   name                = "thislaworkspace"
