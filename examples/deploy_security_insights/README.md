@@ -71,7 +71,6 @@ module "log_analytics_workspace" {
 module "log_analytics_solution" {
   source = "../../modules/log_analytics_solution"
 
-  location                        = var.location
   log_analytics_solution_location = azurerm_resource_group.rg.location
   log_analytics_solution_plan = {
     publisher = "Microsoft"
@@ -82,6 +81,7 @@ module "log_analytics_solution" {
   log_analytics_solution_workspace_name        = module.log_analytics_workspace.resource.name
   log_analytics_solution_workspace_resource_id = module.log_analytics_workspace.resource_id
   enable_telemetry                             = var.enable_telemetry
+  location                                     = var.location
 }
 ```
 
