@@ -39,7 +39,7 @@ provider "azapi" {
 # This ensures we have unique CAF compliant names for our resources.
 module "naming" {
   source  = "Azure/avm-utl-naming/azure"
-  version = "0.2.0"
+  version = "0.3.0"
 }
 
 # This picks a random region from the list of regions.
@@ -70,17 +70,17 @@ resource "azurerm_subnet" "this" {
 
 module "privatednszone" {
   source  = "Azure/avm-res-network-privatednszone/azurerm"
-  version = "0.3.2"
+  version = "0.5.0"
 
-  domain_name         = "privatelink.monitor.azure.com"
-  resource_group_name = azurerm_resource_group.this.name
-  enable_telemetry    = var.enable_telemetry
+  domain_name      = "privatelink.monitor.azure.com"
+  enable_telemetry = var.enable_telemetry
   virtual_network_links = {
     vnetlink0 = {
       vnetlinkname = "dnslinktovnet"
       vnetid       = azurerm_virtual_network.this.id
     }
   }
+  resource_group_name = azurerm_resource_group.this.name
 }
 
 # This is the module call
