@@ -14,34 +14,16 @@ This examples deploys network isolation with log analytics workspace using Priva
 
 ```hcl
 terraform {
-  required_version = "~> 1.5"
+  required_version = ">= 1.16, < 2.0"
 
   required_providers {
     azapi = {
       source  = "Azure/azapi"
-      version = "~> 2.0"
-    }
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = ">= 4.36.0, < 5.0.0"
-    }
-    # tflint-ignore: terraform_unused_required_providers
-    modtm = {
-      source  = "registry.terraform.io/azure/modtm"
-      version = "~> 0.3"
+      version = "~> 2.12"
     }
     random = {
       source  = "hashicorp/random"
       version = "~> 3.5"
-    }
-  }
-}
-
-provider "azurerm" {
-  #subscription_id = "xxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-  features {
-    resource_group {
-      prevent_deletion_if_contains_resources = true
     }
   }
 }
@@ -54,7 +36,7 @@ provider "azapi" {
 # This ensures we have unique CAF compliant names for our resources.
 module "naming" {
   source  = "Azure/avm-utl-naming/azure"
-  version = "0.2.0"
+  version = "0.3.0"
 }
 
 # This picks a random region from the list of regions.
@@ -64,36 +46,48 @@ resource "random_integer" "region_index" {
 }
 
 # This is required for resource modules
-resource "azurerm_resource_group" "this" {
+resource "azapi_resource" "this" {
   location = local.azure_regions[random_integer.region_index.result]
   name     = module.naming.resource_group.name_unique
+  type     = "Microsoft.Resources/resourceGroups@2024-03-01"
 }
 
-resource "azurerm_virtual_network" "this" {
-  location            = azurerm_resource_group.this.location
-  name                = module.naming.virtual_network.name_unique
-  resource_group_name = azurerm_resource_group.this.name
-  address_space       = ["192.168.0.0/24"]
+resource "azapi_resource" "virtual_network" {
+  location  = azapi_resource.this.location
+  name      = module.naming.virtual_network.name_unique
+  parent_id = azapi_resource.this.id
+  type      = "Microsoft.Network/virtualNetworks@2024-05-01"
+  body = {
+    properties = {
+      addressSpace = {
+        addressPrefixes = ["192.168.0.0/24"]
+      }
+    }
+  }
 }
 
-resource "azurerm_subnet" "this" {
-  name                 = module.naming.subnet.name_unique
-  resource_group_name  = azurerm_resource_group.this.name
-  virtual_network_name = azurerm_virtual_network.this.name
-  address_prefixes     = ["192.168.0.0/24"]
+resource "azapi_resource" "subnet" {
+  name      = module.naming.subnet.name_unique
+  parent_id = azapi_resource.virtual_network.id
+  type      = "Microsoft.Network/virtualNetworks/subnets@2024-05-01"
+  body = {
+    properties = {
+      addressPrefix = "192.168.0.0/24"
+    }
+  }
 }
 
 module "privatednszone" {
   source  = "Azure/avm-res-network-privatednszone/azurerm"
-  version = "0.3.2"
+  version = "0.5.0"
 
-  domain_name         = "privatelink.monitor.azure.com"
-  resource_group_name = azurerm_resource_group.this.name
-  enable_telemetry    = var.enable_telemetry
+  domain_name      = "privatelink.monitor.azure.com"
+  parent_id        = azapi_resource.this.id
+  enable_telemetry = var.enable_telemetry
   virtual_network_links = {
     vnetlink0 = {
-      vnetlinkname = "dnslinktovnet"
-      vnetid       = azurerm_virtual_network.this.id
+      name               = "dnslinktovnet"
+      virtual_network_id = azapi_resource.virtual_network.id
     }
   }
 }
@@ -102,11 +96,10 @@ module "privatednszone" {
 module "law" {
   source = "../../"
 
-  location            = azurerm_resource_group.this.location
+  location            = azapi_resource.this.location
   name                = "thislaworkspace"
-  resource_group_name = azurerm_resource_group.this.name
-  # source             = "Azure/avm-res-operationalinsights-workspace/azurerm"
-  enable_telemetry = var.enable_telemetry
+  resource_group_name = azapi_resource.this.name
+  enable_telemetry    = var.enable_telemetry
   log_analytics_workspace_identity = {
     type = "SystemAssigned"
   }
@@ -115,15 +108,16 @@ module "law" {
   monitor_private_link_scope = {
     pe1 = {
       name        = "law_pl_scope"
-      resource_id = azurerm_resource_group.this.id
+      resource_id = azapi_resource.this.id
     }
   }
   monitor_private_link_scoped_service_name = "law_pl_service"
   private_endpoints = {
     pe1 = {
-      subnet_resource_id          = azurerm_subnet.this.id
-      network_interface_name      = "nic1"
-      private_dns_zone_group_name = "dnslinktovnet"
+      subnet_resource_id            = azapi_resource.subnet.id
+      network_interface_name        = "nic1"
+      private_dns_zone_group_name   = "dnslinktovnet"
+      private_dns_zone_resource_ids = [module.privatednszone.resource_id]
     }
   }
 }
@@ -134,13 +128,9 @@ module "law" {
 
 The following requirements are needed by this module:
 
-- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (~> 1.5)
+- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.16, < 2.0)
 
-- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.0)
-
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 4.36.0, < 5.0.0)
-
-- <a name="requirement_modtm"></a> [modtm](#requirement\_modtm) (~> 0.3)
+- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.12)
 
 - <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.5)
 
@@ -148,9 +138,9 @@ The following requirements are needed by this module:
 
 The following resources are used by this module:
 
-- [azurerm_resource_group.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
-- [azurerm_subnet.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
-- [azurerm_virtual_network.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_network) (resource)
+- [azapi_resource.subnet](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.this](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.virtual_network](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [random_integer.region_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
 
 <!-- markdownlint-disable MD013 -->
@@ -190,13 +180,13 @@ Version:
 
 Source: Azure/avm-utl-naming/azure
 
-Version: 0.2.0
+Version: 0.3.0
 
 ### <a name="module_privatednszone"></a> [privatednszone](#module\_privatednszone)
 
 Source: Azure/avm-res-network-privatednszone/azurerm
 
-Version: 0.3.2
+Version: 0.5.0
 
 <!-- markdownlint-disable-next-line MD041 -->
 ## Data Collection

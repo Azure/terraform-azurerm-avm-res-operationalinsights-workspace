@@ -1,13 +1,13 @@
 resource "azapi_resource" "nsp_association" {
   count = var.network_security_perimeter_association != null ? 1 : 0
 
-  name      = "nsp-assoc-${azurerm_log_analytics_workspace.this.name}"
+  name      = "nsp-assoc-${azapi_resource.this.name}"
   parent_id = var.network_security_perimeter_association.resource_id
   type      = var.resource_types.network_network_security_perimeters_resource_associations
   body = {
     properties = {
       privateLinkResource = {
-        id = azurerm_log_analytics_workspace.this.id
+        id = azapi_resource.this.id
       }
       profile = {
         id = "${var.network_security_perimeter_association.resource_id}/profiles/${var.network_security_perimeter_association.profile_name}"

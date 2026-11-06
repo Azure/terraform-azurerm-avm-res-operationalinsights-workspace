@@ -16,24 +16,25 @@ This module is used to deploy Azure Monitor Query Packs and Queries.
 
 The following requirements are needed by this module:
 
-- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.9.0)
+- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.9, < 2.0)
 
 - <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.12)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 4.0)
-
 - <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.6)
+
+- <a name="requirement_time"></a> [time](#requirement\_time) (~> 0.13)
 
 ## Resources
 
 The following resources are used by this module:
 
 - [azapi_resource.queries](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.query_pack_locks](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.query_packs](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.telemetry](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
-- [azurerm_management_lock.query_packs](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/management_lock) (resource)
 - [random_uuid.query_name](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/uuid) (resource)
 - [terraform_data.telemetry](https://registry.terraform.io/providers/hashicorp/terraform/latest/docs/resources/data) (resource)
+- [time_sleep.query_pack_lock_removal](https://registry.terraform.io/providers/hashicorp/time/latest/docs/resources/sleep) (resource)
 - [azapi_client_config.telemetry](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/client_config) (data source)
 
 <!-- markdownlint-disable MD013 -->
@@ -66,6 +67,28 @@ If it is set to false, then no telemetry will be collected.
 Type: `bool`
 
 Default: `true`
+
+### <a name="input_ignore_body_changes"></a> [ignore\_body\_changes](#input\_ignore\_body\_changes)
+
+Description: Body-relative dot paths to ignore on the AzAPI resources of this module.  
+Changes take effect only after apply.  
+Ignored configuration is not sent to Azure until its path is removed.
+
+- `authorization_locks` - Paths ignored on the query pack management locks.
+- `operationalinsights_query_packs` - Paths ignored on the query packs.
+- `operationalinsights_query_packs_queries` - Paths ignored on the queries.
+
+Type:
+
+```hcl
+object({
+    authorization_locks                     = optional(list(string), [])
+    operationalinsights_query_packs         = optional(list(string), [])
+    operationalinsights_query_packs_queries = optional(list(string), [])
+  })
+```
+
+Default: `{}`
 
 ### <a name="input_monitor_queries"></a> [monitor\_queries](#input\_monitor\_queries)
 
@@ -125,11 +148,75 @@ map(object({
 
 Default: `{}`
 
+### <a name="input_resource_types"></a> [resource\_types](#input\_resource\_types)
+
+Description: AzAPI resource types and API versions, in `<provider>/<resource>@<api-version>` form. Each key defaults to a tested value; supply only the keys you want to override.
+
+- `authorization_locks` - The query pack management locks.
+- `operationalinsights_query_packs` - The query packs.
+- `operationalinsights_query_packs_queries` - The queries.
+
+Type:
+
+```hcl
+object({
+    authorization_locks                     = optional(string, "Microsoft.Authorization/locks@2020-05-01")
+    operationalinsights_query_packs         = optional(string, "Microsoft.OperationalInsights/queryPacks@2019-09-01")
+    operationalinsights_query_packs_queries = optional(string, "Microsoft.OperationalInsights/queryPacks/queries@2019-09-01")
+  })
+```
+
+Default: `{}`
+
+### <a name="input_retry"></a> [retry](#input\_retry)
+
+Description: Retry configuration applied to every AzAPI resource of this module.  
+Defaults to null (no custom retry).
+
+- `error_message_regex` - Error-message patterns that trigger a retry.
+- `interval_seconds` - Initial interval between retries in seconds.
+- `max_interval_seconds` - Maximum interval between retries in seconds.
+
+Type:
+
+```hcl
+object({
+    error_message_regex  = optional(list(string))
+    interval_seconds     = optional(number)
+    max_interval_seconds = optional(number)
+  })
+```
+
+Default: `null`
+
 ### <a name="input_tags"></a> [tags](#input\_tags)
 
 Description: (Optional) A mapping of tags to assign to the resources.
 
 Type: `map(string)`
+
+Default: `null`
+
+### <a name="input_timeouts"></a> [timeouts](#input\_timeouts)
+
+Description: Per-operation timeouts applied to every AzAPI resource of this module.  
+Defaults to null (provider defaults). Values are Go duration strings.
+
+- `create` - Create timeout.
+- `read` - Read timeout.
+- `update` - Update timeout.
+- `delete` - Delete timeout.
+
+Type:
+
+```hcl
+object({
+    create = optional(string)
+    read   = optional(string)
+    update = optional(string)
+    delete = optional(string)
+  })
+```
 
 Default: `null`
 

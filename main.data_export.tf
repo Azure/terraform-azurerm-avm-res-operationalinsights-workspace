@@ -2,7 +2,7 @@ resource "azapi_resource" "data_export" {
   for_each = var.log_analytics_workspace_data_exports
 
   name      = each.value.name
-  parent_id = azurerm_log_analytics_workspace.this.id
+  parent_id = azapi_resource.this.id
   type      = var.resource_types.operationalinsights_workspaces_data_exports
   body = {
     properties = {

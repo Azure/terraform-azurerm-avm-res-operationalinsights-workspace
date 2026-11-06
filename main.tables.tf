@@ -2,7 +2,7 @@ resource "azapi_resource" "tables" {
   for_each = var.log_analytics_workspace_tables
 
   name      = each.value.name
-  parent_id = each.value.resource_id != null ? each.value.resource_id : azurerm_log_analytics_workspace.this.id
+  parent_id = each.value.resource_id != null ? each.value.resource_id : azapi_resource.this.id
   type      = var.resource_types.operationalinsights_workspaces_tables
   body = {
     properties = {
@@ -40,7 +40,7 @@ resource "azapi_update_resource" "tables" {
   for_each = var.log_analytics_workspace_tables_update
 
   name      = each.value.name
-  parent_id = each.value.resource_id != null ? each.value.resource_id : azurerm_log_analytics_workspace.this.id
+  parent_id = each.value.resource_id != null ? each.value.resource_id : azapi_resource.this.id
   type      = var.resource_types.operationalinsights_workspaces_tables
   body = {
     properties = {

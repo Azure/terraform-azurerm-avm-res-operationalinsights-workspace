@@ -17,19 +17,18 @@ This module supports:
 
 The following requirements are needed by this module:
 
-- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (~> 1.5)
+- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.9, < 2.0)
 
 - <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.12)
-
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.71, < 5.0.0)
 
 ## Resources
 
 The following resources are used by this module:
 
 - [azapi_resource.telemetry](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
-- [azurerm_log_analytics_solution.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/log_analytics_solution) (resource)
+- [azapi_resource.this](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [terraform_data.telemetry](https://registry.terraform.io/providers/hashicorp/terraform/latest/docs/resources/data) (resource)
+- [azapi_client_config.current](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/client_config) (data source)
 - [azapi_client_config.telemetry](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/client_config) (data source)
 
 <!-- markdownlint-disable MD013 -->
@@ -97,6 +96,24 @@ Type: `bool`
 
 Default: `true`
 
+### <a name="input_ignore_body_changes"></a> [ignore\_body\_changes](#input\_ignore\_body\_changes)
+
+Description: Body-relative dot paths to ignore on the AzAPI resources of this module.  
+Changes take effect only after apply.  
+Ignored configuration is not sent to Azure until its path is removed.
+
+- `operationsmanagement_solutions` - Paths ignored on the solution.
+
+Type:
+
+```hcl
+object({
+    operationsmanagement_solutions = optional(list(string), [])
+  })
+```
+
+Default: `{}`
+
 ### <a name="input_location"></a> [location](#input\_location)
 
 Description: The Azure region for this module's resources or telemetry deployment.
@@ -115,10 +132,12 @@ Default: `null`
 
 ### <a name="input_log_analytics_solution_timeouts"></a> [log\_analytics\_solution\_timeouts](#input\_log\_analytics\_solution\_timeouts)
 
-Description: - `create` - (Defaults to 30 minutes) Used when creating the Log Analytics Solution.
-- `delete` - (Defaults to 30 minutes) Used when deleting the Log Analytics Solution.
-- `read` - (Defaults to 5 minutes) Used when retrieving the Log Analytics Solution.
-- `update` - (Defaults to 30 minutes) Used when updating the Log Analytics Solution.
+Description: Per-operation timeouts for the Log Analytics Solution. An operation that is not set here uses `timeouts`, and otherwise the provider default. Values are Go duration strings.
+
+ - `create` - Used when creating the Log Analytics Solution.
+ - `delete` - Used when deleting the Log Analytics Solution.
+ - `read` - Used when retrieving the Log Analytics Solution.
+ - `update` - Used when updating the Log Analytics Solution.
 
 Type:
 
@@ -133,17 +152,78 @@ object({
 
 Default: `null`
 
+### <a name="input_resource_types"></a> [resource\_types](#input\_resource\_types)
+
+Description: AzAPI resource types and API versions, in `<provider>/<resource>@<api-version>` form. Each key defaults to a tested value; supply only the keys you want to override.
+
+- `operationsmanagement_solutions` - The solution.
+
+Type:
+
+```hcl
+object({
+    operationsmanagement_solutions = optional(string, "Microsoft.OperationsManagement/solutions@2015-11-01-preview")
+  })
+```
+
+Default: `{}`
+
+### <a name="input_retry"></a> [retry](#input\_retry)
+
+Description: Retry configuration applied to every AzAPI resource of this module.  
+Defaults to null (no custom retry).
+
+- `error_message_regex` - Error-message patterns that trigger a retry.
+- `interval_seconds` - Initial interval between retries in seconds.
+- `max_interval_seconds` - Maximum interval between retries in seconds.
+
+Type:
+
+```hcl
+object({
+    error_message_regex  = optional(list(string))
+    interval_seconds     = optional(number)
+    max_interval_seconds = optional(number)
+  })
+```
+
+Default: `null`
+
+### <a name="input_timeouts"></a> [timeouts](#input\_timeouts)
+
+Description: Per-operation timeouts applied to every AzAPI resource of this module.  
+The solution uses `log_analytics_solution_timeouts` first, for the operations that it sets.  
+Defaults to null (provider defaults). Values are Go duration strings.
+
+- `create` - Create timeout.
+- `read` - Read timeout.
+- `update` - Update timeout.
+- `delete` - Delete timeout.
+
+Type:
+
+```hcl
+object({
+    create = optional(string)
+    read   = optional(string)
+    update = optional(string)
+    delete = optional(string)
+  })
+```
+
+Default: `null`
+
 ## Outputs
 
 The following outputs are exported:
 
 ### <a name="output_resource"></a> [resource](#output\_resource)
 
-Description: this is the resource of the rule collection group
+Description: The Log Analytics solution, with the attribute names of the `azurerm_log_analytics_solution` resource that earlier versions of this module returned, so that existing references keep working. Prefer `resource_id`.
 
 ### <a name="output_resource_id"></a> [resource\_id](#output\_resource\_id)
 
-Description: the resource id of the rule\_collection\_group
+Description: The resource ID of the Log Analytics solution.
 
 ## Modules
 

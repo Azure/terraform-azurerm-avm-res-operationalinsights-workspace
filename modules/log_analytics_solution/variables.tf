@@ -79,9 +79,11 @@ variable "log_analytics_solution_timeouts" {
   })
   default     = null
   description = <<-EOT
- - `create` - (Defaults to 30 minutes) Used when creating the Log Analytics Solution.
- - `delete` - (Defaults to 30 minutes) Used when deleting the Log Analytics Solution.
- - `read` - (Defaults to 5 minutes) Used when retrieving the Log Analytics Solution.
- - `update` - (Defaults to 30 minutes) Used when updating the Log Analytics Solution.
+Per-operation timeouts for the Log Analytics Solution. An operation that is not set here uses `timeouts`, and otherwise the provider default. Values are Go duration strings.
+
+ - `create` - Used when creating the Log Analytics Solution.
+ - `delete` - Used when deleting the Log Analytics Solution.
+ - `read` - Used when retrieving the Log Analytics Solution.
+ - `update` - Used when updating the Log Analytics Solution.
 EOT
 }

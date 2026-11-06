@@ -1,32 +1,22 @@
 terraform {
-  required_version = ">= 1.3.0"
+  required_version = ">= 1.16, < 2.0"
 
   required_providers {
-    # tflint-ignore: terraform_unused_required_providers
     azapi = {
       source  = "Azure/azapi"
       version = "~> 2.12"
     }
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = ">= 4.36.0, < 5.0.0"
-    }
     random = {
       source  = "hashicorp/random"
-      version = ">= 3.5.0, < 4.0.0"
+      version = "~> 3.5"
     }
   }
-}
-
-provider "azurerm" {
-  features {}
-  #subscription_id = "xxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 }
 
 # This ensures we have unique CAF compliant names for our resources.
 module "naming" {
   source  = "Azure/avm-utl-naming/azure"
-  version = "0.2.0"
+  version = "0.3.0"
 }
 
 # This picks a random region from the list of regions.
@@ -36,20 +26,20 @@ resource "random_integer" "region_index" {
 }
 
 # This is required for resource modules
-resource "azurerm_resource_group" "rg" {
+resource "azapi_resource" "rg" {
   location = local.azure_regions[random_integer.region_index.result]
   name     = module.naming.resource_group.name_unique
+  type     = "Microsoft.Resources/resourceGroups@2024-03-01"
 }
 
 # This is the module call
 module "log_analytics_workspace" {
   source = "../../"
 
-  location            = azurerm_resource_group.rg.location
+  location            = azapi_resource.rg.location
   name                = "thislaworkspace"
-  resource_group_name = azurerm_resource_group.rg.name
-  # source             = "Azure/avm-res-operationalinsights-workspace/azurerm"
-  enable_telemetry = var.enable_telemetry
+  resource_group_name = azapi_resource.rg.name
+  enable_telemetry    = var.enable_telemetry
   log_analytics_workspace_identity = {
     type = "SystemAssigned"
   }

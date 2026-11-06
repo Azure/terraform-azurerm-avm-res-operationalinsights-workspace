@@ -40,24 +40,30 @@ mock_provider "azapi" {
   }
   mock_data "azapi_client_config" {
     defaults = {
+      subscription_id          = "00000000-0000-0000-0000-000000000000"
       subscription_resource_id = "/subscriptions/00000000-0000-0000-0000-000000000000"
     }
   }
 }
 
-mock_provider "azurerm" {
-  alias = "mocked"
-
-  mock_resource "azurerm_log_analytics_workspace" {
-    defaults = {
-      id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/test-rg/providers/Microsoft.OperationalInsights/workspaces/test-workspace"
-    }
+override_resource {
+  target = azapi_resource.this
+  values = {
+    id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/test-rg/providers/Microsoft.OperationalInsights/workspaces/test-workspace"
   }
+}
 
-  mock_resource "azurerm_private_endpoint" {
-    defaults = {
-      id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/privateEndpoints/test-pe"
-    }
+override_resource {
+  target = azapi_resource.private_endpoints
+  values = {
+    id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/privateEndpoints/test-pe"
+  }
+}
+
+override_resource {
+  target = azapi_resource.private_endpoints_unmanaged
+  values = {
+    id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/privateEndpoints/test-pe"
   }
 }
 
@@ -107,23 +113,21 @@ variables {
 run "legacy_defaults_and_managed_addresses" {
   command = apply
   providers = {
-    azapi   = azapi.mocked
-    azurerm = azurerm.mocked
-
+    azapi  = azapi.mocked
     random = random.mocked
     time   = time.mocked
   }
 
   assert {
-    condition     = length(azurerm_private_endpoint.this) == 1 && length(azurerm_private_endpoint.this_unmanaged) == 0 && length(azurerm_private_endpoint_application_security_group_association.this) == 1 && length(azurerm_private_endpoint_application_security_group_association.this_unmanaged) == 0
-    error_message = "Legacy defaults must keep the managed endpoint and ASG addresses."
+    condition     = length(azapi_resource.private_endpoints) == 1 && length(azapi_resource.private_endpoints_unmanaged) == 0 && length(azapi_resource.private_dns_zone_groups) == 1 && azapi_resource.private_endpoints["legacy"].body.properties.applicationSecurityGroups[0].id == var.private_endpoints["legacy"].application_security_group_associations["asg"]
+    error_message = "Legacy defaults must keep the managed endpoint, with its zone group and application security group."
   }
   assert {
-    condition     = azurerm_private_endpoint.this["legacy"].name == "pep-test-workspace" && azurerm_private_endpoint.this["legacy"].resource_group_name == "test-rg" && azurerm_private_endpoint.this["legacy"].tags == null && azurerm_private_endpoint.this["legacy"].private_service_connection[0].name == "pse-test-workspace" && one(azurerm_private_endpoint.this["legacy"].private_service_connection[0].subresource_names) == "azuremonitor"
+    condition     = azapi_resource.private_endpoints["legacy"].name == "pep-test-workspace" && azapi_resource.private_endpoints["legacy"].parent_id == "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/test-rg" && length(azapi_resource.private_endpoints["legacy"].tags) == 0 && azapi_resource.private_endpoints["legacy"].body.properties.privateLinkServiceConnections[0].name == "pse-test-workspace" && one(azapi_resource.private_endpoints["legacy"].body.properties.privateLinkServiceConnections[0].properties.groupIds) == "azuremonitor"
     error_message = "Legacy endpoint naming, resource group, tags and service defaults must remain unchanged."
   }
   assert {
-    condition     = one(azurerm_private_endpoint.this["legacy"].ip_configuration).member_name == "privatelink" && one(azurerm_private_endpoint.this["legacy"].ip_configuration).subresource_name == "privatelink" && one(azurerm_private_endpoint.this["legacy"].private_dns_zone_group).name == "default"
+    condition     = one(azapi_resource.private_endpoints["legacy"].body.properties.ipConfigurations).properties.memberName == "privatelink" && one(azapi_resource.private_endpoints["legacy"].body.properties.ipConfigurations).properties.groupId == "privatelink" && azapi_resource.private_dns_zone_groups["legacy"].name == "default" && one(azapi_resource.private_dns_zone_groups["legacy"].body.properties.privateDnsZoneConfigs).name == "privatelink.monitor.azure.com"
     error_message = "Legacy IP and DNS defaults must remain unchanged."
   }
   assert {
@@ -139,9 +143,7 @@ run "legacy_defaults_and_managed_addresses" {
 run "global_dns_false_with_scope_only_extension" {
   command = apply
   providers = {
-    azapi   = azapi.mocked
-    azurerm = azurerm.mocked
-
+    azapi  = azapi.mocked
     random = random.mocked
     time   = time.mocked
   }
@@ -157,11 +159,11 @@ run "global_dns_false_with_scope_only_extension" {
     }
   }
   assert {
-    condition     = length(azurerm_private_endpoint.this) == 0 && length(azurerm_private_endpoint.this_unmanaged) == 1 && length(azurerm_private_endpoint_application_security_group_association.this) == 0 && length(azurerm_private_endpoint_application_security_group_association.this_unmanaged) == 1 && length(azurerm_private_endpoint.this_unmanaged["legacy"].private_dns_zone_group) == 0
+    condition     = length(azapi_resource.private_endpoints) == 0 && length(azapi_resource.private_endpoints_unmanaged) == 1 && length(azapi_resource.private_dns_zone_groups) == 0 && length(azapi_resource.private_endpoints_unmanaged["legacy"].body.properties.applicationSecurityGroups) == 1
     error_message = "Scope-only extensions must inherit global DNS ownership, including endpoint and ASG routing."
   }
   assert {
-    condition     = azapi_update_resource.amplscope_update_existing["scope"].body.properties.accessModeSettings.exclusions[0].privateEndpointConnectionName == "observed-connection" && azapi_update_resource.amplscope_update_existing["scope"].body.properties.accessModeSettings.exclusions[0].ingestionAccessMode == "Open" && one(azurerm_private_endpoint.this_unmanaged["legacy"].ip_configuration).member_name == "privatelink" && one(azurerm_private_endpoint.this_unmanaged["legacy"].ip_configuration).subresource_name == "privatelink"
+    condition     = azapi_update_resource.amplscope_update_existing["scope"].body.properties.accessModeSettings.exclusions[0].privateEndpointConnectionName == "observed-connection" && azapi_update_resource.amplscope_update_existing["scope"].body.properties.accessModeSettings.exclusions[0].ingestionAccessMode == "Open" && one(azapi_resource.private_endpoints_unmanaged["legacy"].body.properties.ipConfigurations).properties.memberName == "privatelink" && one(azapi_resource.private_endpoints_unmanaged["legacy"].body.properties.ipConfigurations).properties.groupId == "privatelink"
     error_message = "Unmanaged routing must retain existing IP defaults and extension exclusion settings."
   }
 }
@@ -169,9 +171,7 @@ run "global_dns_false_with_scope_only_extension" {
 run "explicit_legacy_dns_overrides_global" {
   command = apply
   providers = {
-    azapi   = azapi.mocked
-    azurerm = azurerm.mocked
-
+    azapi  = azapi.mocked
     random = random.mocked
     time   = time.mocked
   }
@@ -197,17 +197,15 @@ run "explicit_legacy_dns_overrides_global" {
     }
   }
   assert {
-    condition     = contains(keys(azurerm_private_endpoint.this), "managed") && contains(keys(azurerm_private_endpoint.this_unmanaged), "unmanaged") && contains(keys(azurerm_private_endpoint_application_security_group_association.this), "managed-asg") && contains(keys(azurerm_private_endpoint_application_security_group_association.this_unmanaged), "unmanaged-asg")
-    error_message = "Explicit true and false legacy DNS overrides must retain both endpoint and ASG addresses."
+    condition     = contains(keys(azapi_resource.private_endpoints), "managed") && contains(keys(azapi_resource.private_endpoints_unmanaged), "unmanaged") && length(azapi_resource.private_endpoints["managed"].body.properties.applicationSecurityGroups) == 1 && length(azapi_resource.private_endpoints_unmanaged["unmanaged"].body.properties.applicationSecurityGroups) == 1
+    error_message = "Explicit true and false legacy DNS overrides must route both endpoints and their application security groups."
   }
 }
 
 run "canonical_fields_and_legacy_resource_group_names" {
   command = apply
   providers = {
-    azapi   = azapi.mocked
-    azurerm = azurerm.mocked
-
+    azapi  = azapi.mocked
     random = random.mocked
     time   = time.mocked
   }
@@ -242,25 +240,27 @@ run "canonical_fields_and_legacy_resource_group_names" {
     }
   }
   assert {
-    condition     = azurerm_private_endpoint.this["managed"].resource_group_name == "canonical-rg" && azurerm_private_endpoint.this_unmanaged["unmanaged"].resource_group_name == "legacy-rg"
+    condition     = azapi_resource.private_endpoints["managed"].parent_id == "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/canonical-rg" && azapi_resource.private_endpoints_unmanaged["unmanaged"].parent_id == "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/legacy-rg"
     error_message = "Canonical resource group IDs and existing resource group names must both work."
   }
   assert {
-    condition     = azurerm_private_endpoint.this["managed"].name == "custom-pe" && azurerm_private_endpoint.this["managed"].location == "westeurope" && azurerm_private_endpoint.this["managed"].custom_network_interface_name == "custom-nic" && azurerm_private_endpoint.this["managed"].tags["purpose"] == "endpoint" && azurerm_private_endpoint.this["managed"].private_service_connection[0].name == "custom-connection" && one(azurerm_private_endpoint.this["managed"].private_dns_zone_group).name == "custom-dns"
+    condition     = azapi_resource.private_endpoints["managed"].name == "custom-pe" && azapi_resource.private_endpoints["managed"].location == "westeurope" && azapi_resource.private_endpoints["managed"].body.properties.customNetworkInterfaceName == "custom-nic" && azapi_resource.private_endpoints["managed"].tags["purpose"] == "endpoint" && azapi_resource.private_endpoints["managed"].body.properties.privateLinkServiceConnections[0].name == "custom-connection" && azapi_resource.private_dns_zone_groups["managed"].name == "custom-dns"
     error_message = "Explicit per-endpoint overrides must remain effective."
   }
   assert {
-    condition     = alltrue([for pe in [azurerm_private_endpoint.this["managed"], azurerm_private_endpoint.this_unmanaged["unmanaged"]] : one(pe.ip_configuration).member_name == "custom-member" && one(pe.ip_configuration).subresource_name == "azuremonitor" && one(pe.private_service_connection[0].subresource_names) == "azuremonitor"])
+    condition     = alltrue([for pe in [azapi_resource.private_endpoints["managed"], azapi_resource.private_endpoints_unmanaged["unmanaged"]] : one(pe.body.properties.ipConfigurations).properties.memberName == "custom-member" && one(pe.body.properties.ipConfigurations).properties.groupId == "azuremonitor" && one(pe.body.properties.privateLinkServiceConnections[0].properties.groupIds) == "azuremonitor"])
     error_message = "Canonical member and subresource fields must reach both endpoint branches."
+  }
+  assert {
+    condition     = alltrue([for pe in [azapi_resource.private_endpoints["managed"], azapi_resource.private_endpoints_unmanaged["unmanaged"]] : pe.ignore_null_property && pe.list_unique_id_property["properties.applicationSecurityGroups"] == "id"])
+    error_message = "Both endpoint branches must ignore an unset network interface name and the order Azure returns application security groups in."
   }
 }
 
 run "new_scope_connection_uses_unmanaged_endpoint" {
   command = apply
   providers = {
-    azapi   = azapi.mocked
-    azurerm = azurerm.mocked
-
+    azapi  = azapi.mocked
     random = random.mocked
     time   = time.mocked
   }
@@ -287,9 +287,7 @@ run "new_scope_connection_uses_unmanaged_endpoint" {
 run "endpoint_locks_roles_and_azapi_controls" {
   command = apply
   providers = {
-    azapi   = azapi.mocked
-    azurerm = azurerm.mocked
-
+    azapi  = azapi.mocked
     random = random.mocked
     time   = time.mocked
   }
@@ -341,7 +339,7 @@ run "endpoint_locks_roles_and_azapi_controls" {
     error_message = "Existing role assignment settings must reach the ARM request."
   }
   assert {
-    condition     = azapi_resource.private_endpoint_locks["managed"].parent_id == azurerm_private_endpoint.this["managed"].id && azapi_resource.private_endpoint_locks["unmanaged"].parent_id == azurerm_private_endpoint.this_unmanaged["unmanaged"].id && azapi_resource.private_endpoint_role_assignments["unmanaged-reader"].parent_id == azurerm_private_endpoint.this_unmanaged["unmanaged"].id && azapi_resource.private_endpoint_role_assignments["managed-reader"].parent_id == azurerm_private_endpoint.this["managed"].id
+    condition     = azapi_resource.private_endpoint_locks["managed"].parent_id == azapi_resource.private_endpoints["managed"].id && azapi_resource.private_endpoint_locks["unmanaged"].parent_id == azapi_resource.private_endpoints_unmanaged["unmanaged"].id && azapi_resource.private_endpoint_role_assignments["unmanaged-reader"].parent_id == azapi_resource.private_endpoints_unmanaged["unmanaged"].id && azapi_resource.private_endpoint_role_assignments["managed-reader"].parent_id == azapi_resource.private_endpoints["managed"].id
     error_message = "Locks and roles must target the correct managed or unmanaged endpoint."
   }
   assert {
@@ -353,9 +351,7 @@ run "endpoint_locks_roles_and_azapi_controls" {
 run "none_lock_remains_disabled" {
   command = apply
   providers = {
-    azapi   = azapi.mocked
-    azurerm = azurerm.mocked
-
+    azapi  = azapi.mocked
     random = random.mocked
     time   = time.mocked
   }
@@ -376,9 +372,7 @@ run "none_lock_remains_disabled" {
 run "invalid_subnet_is_rejected" {
   command = plan
   providers = {
-    azapi   = azapi.mocked
-    azurerm = azurerm.mocked
-
+    azapi  = azapi.mocked
     random = random.mocked
     time   = time.mocked
   }
@@ -393,9 +387,7 @@ run "invalid_subnet_is_rejected" {
 run "invalid_dns_zone_is_rejected" {
   command = plan
   providers = {
-    azapi   = azapi.mocked
-    azurerm = azurerm.mocked
-
+    azapi  = azapi.mocked
     random = random.mocked
     time   = time.mocked
   }
@@ -413,9 +405,7 @@ run "invalid_dns_zone_is_rejected" {
 run "invalid_asg_is_rejected" {
   command = plan
   providers = {
-    azapi   = azapi.mocked
-    azurerm = azurerm.mocked
-
+    azapi  = azapi.mocked
     random = random.mocked
     time   = time.mocked
   }
@@ -433,9 +423,7 @@ run "invalid_asg_is_rejected" {
 run "invalid_delegated_identity_is_rejected" {
   command = plan
   providers = {
-    azapi   = azapi.mocked
-    azurerm = azurerm.mocked
-
+    azapi  = azapi.mocked
     random = random.mocked
     time   = time.mocked
   }

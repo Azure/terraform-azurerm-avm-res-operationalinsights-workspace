@@ -18,7 +18,20 @@ variable "name" {
 # This is required for most resource modules
 variable "resource_group_name" {
   type        = string
-  description = "(Required) Specifies the name of the Resource Group in which the Log Analytics Workspace should exist. Changing this forces a new resource to be created"
+  description = "(Required) Specifies the name of the Resource Group in which the Log Analytics Workspace should exist. Ignored when `parent_id` is set. Changing this forces a new resource to be created"
+  nullable    = false
+}
+
+variable "avm_managed_migration_enabled" {
+  type        = bool
+  default     = false
+  description = <<DESCRIPTION
+(Optional) Set to `true` for a single apply when upgrading from version 0.5.x or earlier with private endpoints whose private DNS zone group this module manages, that is with `private_dns_zone_resource_ids` set and `manage_dns_zone_group` not `false`. The module then adopts the existing zone groups instead of failing with `Resource already exists`.
+
+Leave this `false` on a new deployment. An import cannot adopt a zone group that does not exist yet, so enabling it before the zone groups exist fails at plan time.
+
+Terraform skips an import whose target is already in state, so the flag is a no-op for the zone groups it adopted. Remove it after the upgrade, before adding private endpoints with new zone groups.
+DESCRIPTION
   nullable    = false
 }
 
@@ -94,8 +107,9 @@ DESCRIPTION
 
 variable "lock" {
   type = object({
-    kind = string
-    name = optional(string, null)
+    kind  = string
+    name  = optional(string, null)
+    notes = optional(string, null)
   })
   default     = null
   description = <<DESCRIPTION
@@ -103,6 +117,9 @@ Controls the Resource Lock configuration for this resource. The following proper
 
 - `kind` - (Required) The type of lock. Possible values are `\"CanNotDelete\"` and `\"ReadOnly\"`.
 - `name` - (Optional) The name of the lock. If not specified, a name will be generated based on the `kind` value. Changing this forces the creation of a new resource.
+- `notes` - (Optional) Notes about the lock. This value maps to `Microsoft.Authorization/locks.properties.notes`. If not specified, a note describing the lock `kind` is used.
+
+A `ReadOnly` lock also blocks changes to the resources under the workspace, such as its role assignments, diagnostic settings and tables.
 DESCRIPTION
 
   validation {
@@ -297,10 +314,12 @@ variable "log_analytics_workspace_timeouts" {
   })
   default     = null
   description = <<DESCRIPTION
- - `create` - (Defaults to 30 minutes) Used when creating the Log Analytics Workspace.
- - `delete` - (Defaults to 30 minutes) Used when deleting the Log Analytics Workspace.
- - `read` - (Defaults to 5 minutes) Used when retrieving the Log Analytics Workspace.
- - `update` - (Defaults to 30 minutes) Used when updating the Log Analytics Workspace.
+Per-operation timeouts for the Log Analytics Workspace. An operation that is not set here uses `timeouts`, and otherwise the provider default.
+
+ - `create` - Used when creating the Log Analytics Workspace.
+ - `delete` - Used when deleting the Log Analytics Workspace.
+ - `read` - Used when retrieving the Log Analytics Workspace.
+ - `update` - Used when updating the Log Analytics Workspace.
 DESCRIPTION
 }
 
@@ -381,6 +400,17 @@ variable "network_security_perimeter_association" {
 - `profile_name` - (Required) The name of the NSP profile to associate with.
 - `access_mode` - (Optional) The access mode for the association. Possible values are `Learning`, `Enforced`, and `Audit`. Defaults to `Learning`.
 DESCRIPTION
+}
+
+variable "parent_id" {
+  type        = string
+  default     = null
+  description = "The resource ID of the resource group in which to create the Log Analytics Workspace, for example `/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/example-rg`. When provided, takes precedence over `resource_group_name`. Changing this forces a new resource to be created."
+
+  validation {
+    condition     = var.parent_id == null || can(provider::azapi::parse_resource_id("Microsoft.Resources/resourceGroups", var.parent_id))
+    error_message = "`parent_id` must be a valid Azure resource group resource ID, or null."
+  }
 }
 
 variable "private_endpoint_extensions" {
@@ -522,6 +552,7 @@ variable "private_endpoints_manage_dns_zone_group" {
 
 variable "role_assignments" {
   type = map(object({
+    name                                   = optional(string, null)
     role_definition_id_or_name             = string
     principal_id                           = string
     description                            = optional(string, null)
@@ -533,12 +564,13 @@ variable "role_assignments" {
   }))
   default     = {}
   description = <<DESCRIPTION
-  A map of role assignments to create on the <RESOURCE>. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
+  A map of role assignments to create on the Log Analytics Workspace. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
   
-  - `role_definition_id_or_name` - The ID or name of the role definition to assign to the principal.
+  - `name` - (Optional) The name of the role assignment. If not set, a random UUID will be generated. Changing this forces the creation of a new resource. Role assignments created by earlier versions of this module keep their existing name.
+  - `role_definition_id_or_name` - The ID or name of the role definition to assign to the principal. A name is matched, ignoring case, against the role definitions that can be assigned in the resource group. For a custom role that can only be assigned on this workspace, use its ID.
   - `principal_id` - The ID of the principal to assign the role to.
   - `description` - (Optional) The description of the role assignment.
-  - `skip_service_principal_aad_check` - (Optional) If set to true, skips the Azure Active Directory check for the service principal in the tenant. Defaults to false.
+  - `skip_service_principal_aad_check` - (Optional) If set to true and `principal_type` is not set, `principal_type` is set to `ServicePrincipal`, which skips the Azure Active Directory check for the service principal in the tenant. Defaults to false.
   - `condition` - (Optional) The condition which will be used to scope the role assignment.
   - `condition_version` - (Optional) The version of the condition syntax. Leave as `null` if you are not using a condition, if you are then valid values are '2.0'.
   - `delegated_managed_identity_resource_id` - (Optional) The delegated Azure Resource Id which contains a Managed Identity. Changing this forces a new resource to be created. This field is only used in cross-tenant scenario.
@@ -547,6 +579,14 @@ variable "role_assignments" {
   > Note: only set `skip_service_principal_aad_check` to true if you are assigning a role to a service principal.
   DESCRIPTION
   nullable    = false
+
+  validation {
+    condition = alltrue([
+      for _, v in var.role_assignments :
+      v.delegated_managed_identity_resource_id == null || can(provider::azapi::parse_resource_id("Microsoft.ManagedIdentity/userAssignedIdentities", v.delegated_managed_identity_resource_id))
+    ])
+    error_message = "Each `role_assignments[*].delegated_managed_identity_resource_id` must be a valid user-assigned managed identity resource ID, or null."
+  }
 }
 
 # tflint-ignore: terraform_unused_declarations
