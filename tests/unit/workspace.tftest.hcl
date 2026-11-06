@@ -88,8 +88,30 @@ run "workspace_defaults_match_earlier_versions" {
     error_message = "Optional interfaces must be absent by default."
   }
   assert {
+    condition     = azapi_resource_action.shared_keys.action == "sharedKeys" && length(data.azapi_resource_action.shared_keys) == 0
+    error_message = "The shared keys must be read when the workspace is created, and not during later plans, which a ReadOnly lock would block."
+  }
+  assert {
     condition     = output.name == "test-workspace"
     error_message = "The name output must return the workspace name."
+  }
+}
+
+run "shared_keys_are_read_during_plan_while_migrating" {
+  command = apply
+  providers = {
+    azapi  = azapi.mocked
+    random = random.mocked
+    time   = time.mocked
+  }
+
+  variables {
+    avm_managed_migration_enabled = true
+  }
+
+  assert {
+    condition     = length(data.azapi_resource_action.shared_keys) == 1 && data.azapi_resource_action.shared_keys[0].action == "sharedKeys"
+    error_message = "The shared keys must also be read during plan while upgrading, so that resources that use them are not changed."
   }
 }
 

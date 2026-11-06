@@ -81,11 +81,11 @@ output "resource" {
     local_authentication_enabled            = try(azapi_resource.this.output.features.disableLocalAuth, null) != true
     location                                = azapi_resource.this.location
     name                                    = azapi_resource.this.name
-    primary_shared_key                      = try(data.azapi_resource_action.shared_keys.sensitive_output.primarySharedKey, null)
+    primary_shared_key                      = try(data.azapi_resource_action.shared_keys[0].sensitive_output.primarySharedKey, azapi_resource_action.shared_keys.sensitive_output.primarySharedKey, null)
     reservation_capacity_in_gb_per_day      = try(azapi_resource.this.output.sku.capacityReservationLevel, null)
     resource_group_name                     = local.resource_group_name
     retention_in_days                       = try(azapi_resource.this.output.retention_in_days, null)
-    secondary_shared_key                    = try(data.azapi_resource_action.shared_keys.sensitive_output.secondarySharedKey, null)
+    secondary_shared_key                    = try(data.azapi_resource_action.shared_keys[0].sensitive_output.secondarySharedKey, azapi_resource_action.shared_keys.sensitive_output.secondarySharedKey, null)
     sku                                     = try(azapi_resource.this.output.sku.name, null)
     tags                                    = azapi_resource.this.tags == null ? tomap({}) : azapi_resource.this.tags
     workspace_id                            = local.workspace_exists ? data.azapi_resource.workspace.output.customer_id : try(azapi_resource.this.output.customer_id, null)

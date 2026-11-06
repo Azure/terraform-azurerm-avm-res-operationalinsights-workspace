@@ -15,8 +15,8 @@ these previously declared settings were not implemented.
 The workspace and the resources around it are now AzAPI resources, and the module no longer uses the AzureRM provider. `moved` blocks carry the workspace, its lock, diagnostic settings, role assignments, linked service and linked storage accounts, the private endpoints, the Monitor Private Link Scope scoped services and the scope locks to their new addresses in the state, so nothing is recreated. The same applies to the solution of the `log_analytics_solution` submodule and the query pack locks of the `query_packs` submodule. Terraform 1.16 or later is required.
 
 1. Keep the AzureRM provider's `provider` block in your root module until the upgrade has been applied. Terraform needs it to remove the application security group associations from the state.
-1. A `ReadOnly` lock blocks the upgrade, because the workspace, the resources under it and the private endpoints are updated. Change it to `CanNotDelete`, or remove it, until the upgrade is applied.
-1. If the module manages the private DNS zone group of a private endpoint, that is with `private_dns_zone_resource_ids` set and `manage_dns_zone_group` not `false`, set `avm_managed_migration_enabled = true` for the upgrade apply. The zone group is now a separate resource, and the flag makes the module import the existing zone group rather than fail with `Resource already exists`. Remove the flag after the upgrade. Leave it unset on a new deployment, because a zone group that does not exist yet cannot be imported.
+1. A `ReadOnly` lock blocks the upgrade, because the workspace, the resources under it and the private endpoints are updated, and the shared keys are read. With your current version, change it to `CanNotDelete` or remove it before upgrading, and restore it afterwards.
+1. Set `avm_managed_migration_enabled = true` for the upgrade apply. The module then reads the shared keys during plan, so resources that use `primary_shared_key` or `secondary_shared_key` of the `resource` output are not changed. It also imports the private DNS zone groups that the private endpoints had, which are now separate resources, rather than failing with `Resource already exists`. Remove the flag after the upgrade. Leave it unset on a new deployment, because a zone group that does not exist yet cannot be imported.
 1. The `log_analytics_solution` submodule now deploys AVM telemetry, which needs its new `location` input. Set `location` to the solution's region, or set `enable_telemetry = false`.
 1. Cross-tenant role assignments, which set `delegated_managed_identity_resource_id`, need extra steps. The AzureRM provider stored their ID with a `|<tenant-id>` suffix that the `moved` block cannot convert. Before planning, remove each one from the state, then import it at its new address with an `import` block in your root module:
 
@@ -31,7 +31,8 @@ The workspace and the resources around it are now AzAPI resources, and the modul
    }
    ```
 
-1. Run `terraform init -upgrade`, then `terraform plan`. The plan must not destroy or replace anything except the AVM telemetry deployment, whose name includes the module version. It updates the moved resources in place with the same settings. Attributes of the `resource` and `private_endpoints` outputs that come from Azure are known only after apply in this plan, except the IDs, `workspace_id` and the shared keys. The plan also adds:
+1. Run `terraform init -upgrade`, then `terraform plan`. The plan must not destroy or replace anything, except the AVM telemetry deployment of 0.3.0 or earlier. It updates the moved resources in place with the same settings. Attributes of the `resource` and `private_endpoints` outputs that come from Azure are known only after apply in this plan, except the IDs, `workspace_id` and the shared keys. The plan also adds:
+   - `azapi_resource_action.shared_keys`, which reads the shared keys;
    - a `random_uuid` for each role assignment, which only exists in the state. The assignments keep their names;
    - a `time_sleep` for each lock, which pauses for 30 seconds when the lock is removed;
    - the imported private DNS zone groups, when `avm_managed_migration_enabled` is set;
@@ -50,6 +51,7 @@ Other changes:
 - The `resource` output keeps the attribute names of the `azurerm_log_analytics_workspace` resource, and the `private_endpoints` output those of the `azurerm_private_endpoint` resource. The new `name` output returns the workspace name.
 - Role names are matched, ignoring case, against the role definitions that can be assigned in the resource group, and an unknown name fails during plan.
 - Changing the SKU updates the workspace in place. The AzureRM provider recreated the workspace for most SKU changes.
+- The shared keys are read when the workspace is created, rather than on every refresh, because a `ReadOnly` lock blocks reading them. Keys regenerated outside Terraform are not picked up until you run `terraform apply -replace='module.<module-name>.azapi_resource_action.shared_keys'`.
 - The linked service of a dedicated cluster now gets the module's `tags`.
 - Locks on the workspace, private endpoints, Monitor Private Link Scopes and query packs are removed 30 seconds before the resources they protect, because Azure keeps enforcing a deleted lock for a few seconds.
 

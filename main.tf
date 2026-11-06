@@ -67,10 +67,40 @@ data "azapi_resource" "workspace" {
   }
 }
 
-# The AzureRM provider read the shared keys whenever it read the workspace, so they are read on every plan here
-# too. While the workspace exists, the keys are known during plan, including when upgrading from an earlier
-# version of this module, and keys regenerated outside Terraform are picked up.
+# The AzureRM provider read the shared keys with the workspace. They are read here when the workspace is
+# created, or upgraded from an earlier version of this module, and not on later plans: reading them is a POST,
+# which a `ReadOnly` lock blocks. The lock is created after them.
+resource "azapi_resource_action" "shared_keys" {
+  action                           = "sharedKeys"
+  method                           = "POST"
+  resource_id                      = azapi_resource.this.id
+  type                             = var.resource_types.operationalinsights_workspaces
+  response_export_values           = []
+  retry                            = var.retry
+  sensitive_response_export_values = ["primarySharedKey", "secondarySharedKey"]
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+
+    content {
+      create = timeouts.value.create
+      delete = timeouts.value.delete
+      read   = timeouts.value.read
+      update = timeouts.value.update
+    }
+  }
+
+  lifecycle {
+    # Moving the workspace to another region recreates it with the same resource ID and new keys.
+    replace_triggered_by = [azapi_resource.this.location]
+  }
+}
+
+# While upgrading from an earlier version, the shared keys are also read during plan, so that they are known and
+# resources that use them are not changed.
 data "azapi_resource_action" "shared_keys" {
+  count = var.avm_managed_migration_enabled ? 1 : 0
+
   action                           = "sharedKeys"
   method                           = "POST"
   resource_id                      = local.workspace_resource_id

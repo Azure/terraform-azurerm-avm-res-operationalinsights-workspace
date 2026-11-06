@@ -26,11 +26,11 @@ variable "avm_managed_migration_enabled" {
   type        = bool
   default     = false
   description = <<DESCRIPTION
-(Optional) Set to `true` for a single apply when upgrading from version 0.5.x or earlier with private endpoints whose private DNS zone group this module manages, that is with `private_dns_zone_resource_ids` set and `manage_dns_zone_group` not `false`. The module then adopts the existing zone groups instead of failing with `Resource already exists`.
+(Optional) Set to `true` for the apply that upgrades from version 0.5.x or earlier. The module then reads the workspace's shared keys during plan, so that resources that use them are not changed, and adopts the private DNS zone groups that earlier versions created inside the private endpoints, instead of failing with `Resource already exists`.
 
 Leave this `false` on a new deployment. An import cannot adopt a zone group that does not exist yet, so enabling it before the zone groups exist fails at plan time.
 
-Terraform skips an import whose target is already in state, so the flag is a no-op for the zone groups it adopted. Remove it after the upgrade, before adding private endpoints with new zone groups.
+Terraform skips an import whose target is already in state, so the flag is a no-op for the zone groups it adopted. Remove it after the upgrade, before adding private endpoints with new zone groups or a `ReadOnly` lock, which blocks reading the keys.
 DESCRIPTION
   nullable    = false
 }

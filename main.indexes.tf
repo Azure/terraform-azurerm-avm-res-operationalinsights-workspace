@@ -49,6 +49,7 @@ resource "time_sleep" "lock_removal" {
     azapi_resource.linked_storage_accounts,
     azapi_resource.role_assignments,
     azapi_resource.tables,
+    azapi_resource_action.shared_keys,
     azapi_update_resource.tables,
   ]
 }
