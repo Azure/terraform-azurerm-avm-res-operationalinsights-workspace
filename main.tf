@@ -1,9 +1,7 @@
-data "azapi_client_config" "current" {}
-
 resource "azapi_resource" "this" {
   location  = var.location
   name      = var.name
-  parent_id = local.parent_id
+  parent_id = var.parent_id
   type      = var.resource_types.operationalinsights_workspaces
   body = {
     properties = local.workspace_properties
@@ -58,7 +56,7 @@ resource "azapi_resource" "this" {
 # changed. A workspace that is about to be created, or recreated in another region, uses the resource's value.
 data "azapi_resource" "workspace" {
   name             = var.name
-  parent_id        = local.parent_id
+  parent_id        = var.parent_id
   type             = var.resource_types.operationalinsights_workspaces
   ignore_not_found = true
   response_export_values = {

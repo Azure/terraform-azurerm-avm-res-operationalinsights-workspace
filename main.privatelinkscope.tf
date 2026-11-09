@@ -107,7 +107,7 @@ resource "azapi_resource" "amplscope_scoped_service" {
   # The ID is built as the AzureRM provider built it, from the workspace's resource group, so that upgrading
   # does not replace the scoped service. The scope's own ID cannot be used, because it has the type in lower
   # case.
-  parent_id = "${local.parent_id}/providers/Microsoft.Insights/privateLinkScopes/${azapi_resource.amplscope[each.key].name}"
+  parent_id = "${var.parent_id}/providers/Microsoft.Insights/privateLinkScopes/${azapi_resource.amplscope[each.key].name}"
   type      = var.resource_types.insights_private_link_scopes_scoped_resources
   body = {
     properties = {

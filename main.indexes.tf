@@ -118,7 +118,7 @@ resource "azapi_resource" "diagnostic_settings" {
 data "azapi_resource_list" "role_definitions" {
   count = length(var.role_assignments) > 0 ? 1 : 0
 
-  parent_id = local.parent_id
+  parent_id = var.parent_id
   type      = "Microsoft.Authorization/roleDefinitions@2022-04-01"
   response_export_values = {
     results = "value[].{id: id, role_name: properties.roleName}"

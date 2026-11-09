@@ -96,10 +96,10 @@ module "privatednszone" {
 module "law" {
   source = "../../"
 
-  location            = azapi_resource.this.location
-  name                = "thislaworkspace"
-  resource_group_name = azapi_resource.this.name
-  enable_telemetry    = var.enable_telemetry
+  location         = azapi_resource.this.location
+  name             = "thislaworkspace"
+  parent_id        = azapi_resource.this.id
+  enable_telemetry = var.enable_telemetry
   log_analytics_workspace_identity = {
     type = "SystemAssigned"
   }

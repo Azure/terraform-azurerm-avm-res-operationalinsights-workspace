@@ -1,5 +1,3 @@
-data "azapi_client_config" "current" {}
-
 locals {
   # Azure requires both the solution and its plan to be named `SolutionName(WorkspaceName)`.
   name = "${var.log_analytics_solution_solution_name}(${var.log_analytics_solution_workspace_name})"
@@ -14,7 +12,7 @@ locals {
 resource "azapi_resource" "this" {
   location  = var.log_analytics_solution_location
   name      = local.name
-  parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}/resourceGroups/${var.log_analytics_solution_resource_group_name}"
+  parent_id = var.parent_id
   type      = var.resource_types.operationsmanagement_solutions
   body = {
     plan = {

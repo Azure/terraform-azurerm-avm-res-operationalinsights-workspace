@@ -47,10 +47,10 @@ resource "azapi_resource" "rg" {
 module "log_analytics_workspace" {
   source = "../../"
 
-  location            = azapi_resource.rg.location
-  name                = "thislaworkspace"
-  resource_group_name = azapi_resource.rg.name
-  enable_telemetry    = var.enable_telemetry
+  location         = azapi_resource.rg.location
+  name             = "thislaworkspace"
+  parent_id        = azapi_resource.rg.id
+  enable_telemetry = var.enable_telemetry
   log_analytics_workspace_identity = {
     type = "SystemAssigned"
   }
@@ -66,10 +66,10 @@ module "log_analytics_solution" {
     publisher = "Microsoft"
     product   = "OMSGallery/SecurityInsights"
   }
-  log_analytics_solution_resource_group_name   = azapi_resource.rg.name
   log_analytics_solution_solution_name         = "SecurityInsights"
   log_analytics_solution_workspace_name        = module.log_analytics_workspace.name
   log_analytics_solution_workspace_resource_id = module.log_analytics_workspace.resource_id
+  parent_id                                    = azapi_resource.rg.id
   enable_telemetry                             = var.enable_telemetry
   location                                     = var.location
 }

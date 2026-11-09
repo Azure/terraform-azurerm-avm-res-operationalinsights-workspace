@@ -28,7 +28,6 @@ The following resources are used by this module:
 - [azapi_resource.telemetry](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.this](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [terraform_data.telemetry](https://registry.terraform.io/providers/hashicorp/terraform/latest/docs/resources/data) (resource)
-- [azapi_client_config.current](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/client_config) (data source)
 - [azapi_client_config.telemetry](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/client_config) (data source)
 
 <!-- markdownlint-disable MD013 -->
@@ -58,12 +57,6 @@ object({
   })
 ```
 
-### <a name="input_log_analytics_solution_resource_group_name"></a> [log\_analytics\_solution\_resource\_group\_name](#input\_log\_analytics\_solution\_resource\_group\_name)
-
-Description: (Required) The name of the resource group in which the Log Analytics solution is created. Changing this forces a new resource to be created. Note: The solution and its related workspace can only exist in the same resource group.
-
-Type: `string`
-
 ### <a name="input_log_analytics_solution_solution_name"></a> [log\_analytics\_solution\_solution\_name](#input\_log\_analytics\_solution\_solution\_name)
 
 Description: (Required) Specifies the name of the solution to be deployed. See [here for options](https://docs.microsoft.com/azure/log-analytics/log-analytics-add-solutions).Changing this forces a new resource to be created.
@@ -79,6 +72,12 @@ Type: `string`
 ### <a name="input_log_analytics_solution_workspace_resource_id"></a> [log\_analytics\_solution\_workspace\_resource\_id](#input\_log\_analytics\_solution\_workspace\_resource\_id)
 
 Description: (Required) The full resource ID of the Log Analytics workspace with which the solution will be linked. Changing this forces a new resource to be created.
+
+Type: `string`
+
+### <a name="input_parent_id"></a> [parent\_id](#input\_parent\_id)
+
+Description: (Required) The resource ID of the resource group in which to create the Log Analytics solution, for example `/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/example-rg`. The solution and its workspace must be in the same resource group. Changing this forces a new resource to be created.
 
 Type: `string`
 

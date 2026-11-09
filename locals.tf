@@ -4,9 +4,8 @@ locals {
     CanNotDelete = "Cannot delete the resource or its child resources."
     ReadOnly     = "Cannot delete or modify the resource or its child resources."
   }
-  parent_id           = var.parent_id != null ? var.parent_id : "/subscriptions/${data.azapi_client_config.current.subscription_id}/resourceGroups/${var.resource_group_name}"
-  resource_group_name = provider::azapi::parse_resource_id("Microsoft.Resources/resourceGroups", local.parent_id).resource_group_name
-  subscription_id     = provider::azapi::parse_resource_id("Microsoft.Resources/resourceGroups", local.parent_id).subscription_id
+  resource_group_name = provider::azapi::parse_resource_id("Microsoft.Resources/resourceGroups", var.parent_id).resource_group_name
+  subscription_id     = provider::azapi::parse_resource_id("Microsoft.Resources/resourceGroups", var.parent_id).subscription_id
 }
 
 locals {
@@ -87,7 +86,7 @@ locals {
   # The resource group of each private endpoint. As before, a resource group given by ID is used by name, in
   # the subscription of the workspace.
   private_endpoint_parent_ids = {
-    for k, v in var.private_endpoints : k => v.resource_group_name == null ? local.parent_id : "/subscriptions/${local.subscription_id}/resourceGroups/${try(provider::azapi::parse_resource_id("Microsoft.Resources/resourceGroups", v.resource_group_name).resource_group_name, v.resource_group_name)}"
+    for k, v in var.private_endpoints : k => v.resource_group_name == null ? var.parent_id : "/subscriptions/${local.subscription_id}/resourceGroups/${try(provider::azapi::parse_resource_id("Microsoft.Resources/resourceGroups", v.resource_group_name).resource_group_name, v.resource_group_name)}"
   }
   private_endpoint_private_link_scope_ids = {
     for k, v in var.private_endpoints : k => try(

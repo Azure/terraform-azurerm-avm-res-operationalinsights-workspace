@@ -23,10 +23,10 @@ mock_provider "time" {
 }
 
 variables {
-  enable_telemetry    = false
-  location            = "uksouth"
-  name                = "test-workspace"
-  resource_group_name = "test-rg"
+  enable_telemetry = false
+  location         = "uksouth"
+  name             = "test-workspace"
+  parent_id        = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/test-rg"
 }
 
 run "association_omitted_by_default" {

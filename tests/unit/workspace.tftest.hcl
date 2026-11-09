@@ -49,10 +49,10 @@ mock_provider "time" {
 }
 
 variables {
-  enable_telemetry    = false
-  location            = "uksouth"
-  name                = "test-workspace"
-  resource_group_name = "test-rg"
+  enable_telemetry = false
+  location         = "uksouth"
+  name             = "test-workspace"
+  parent_id        = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/test-rg"
 }
 
 run "workspace_defaults_match_earlier_versions" {
@@ -143,7 +143,7 @@ run "workspace_settings_reach_the_request" {
 
   assert {
     condition     = azapi_resource.this.parent_id == var.parent_id && azapi_resource.this.tags["environment"] == "test"
-    error_message = "parent_id must take precedence over resource_group_name, and tags must be set."
+    error_message = "The workspace must be created under parent_id, and tags must be set."
   }
   assert {
     condition     = azapi_resource.this.body.properties.features.disableLocalAuth == true && azapi_resource.this.body.properties.features.enableLogAccessUsingOnlyResourcePermissions == false && azapi_resource.this.body.properties.forceCmkForQuery == true

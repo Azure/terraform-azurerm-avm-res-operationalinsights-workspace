@@ -14,6 +14,7 @@ these previously declared settings were not implemented.
 
 The workspace and the resources around it are now AzAPI resources, and the module no longer uses the AzureRM provider. `moved` blocks carry the workspace, its lock, diagnostic settings, role assignments, linked service and linked storage accounts, the private endpoints, the Monitor Private Link Scope scoped services and the scope locks to their new addresses in the state, so nothing is recreated. The same applies to the solution of the `log_analytics_solution` submodule and the query pack locks of the `query_packs` submodule. Terraform 1.16 or later is required.
 
+1. `resource_group_name` is replaced by `parent_id`, the resource ID of the resource group. Spell the resource group name exactly as you did in `resource_group_name`, including its case, for example by passing the resource group's `id`. A different spelling plans replacements. In the `log_analytics_solution` submodule, `parent_id` replaces `log_analytics_solution_resource_group_name` in the same way.
 1. Keep the AzureRM provider's `provider` block in your root module until the upgrade has been applied. Terraform needs it to remove the application security group associations from the state.
 1. A `ReadOnly` lock blocks the upgrade, because the workspace, the resources under it and the private endpoints are updated, and the shared keys are read. With your current version, change it to `CanNotDelete` or remove it before upgrading, and restore it afterwards.
 1. Set `avm_managed_migration_enabled = true` for the upgrade apply. The module then reads the shared keys during plan, so resources that use `primary_shared_key` or `secondary_shared_key` of the `resource` output are not changed. It also imports the private DNS zone groups that the private endpoints had, which are now separate resources, rather than failing with `Resource already exists`. Remove the flag after the upgrade. Leave it unset on a new deployment, because a zone group that does not exist yet cannot be imported.
@@ -45,7 +46,6 @@ Linking a dedicated cluster with `log_analytics_workspace_dedicated_cluster_reso
 
 Other changes:
 
-- `parent_id` can be set instead of `resource_group_name`.
 - `resource_types`, `retry`, `timeouts` and `ignore_body_changes` cover all the module's resources, and the submodules accept them too. `log_analytics_workspace_timeouts` falls back to `timeouts` for each operation that it does not set.
 - `lock` accepts `notes`, and `role_assignments` accepts `name`.
 - The `resource` output keeps the attribute names of the `azurerm_log_analytics_workspace` resource, and the `private_endpoints` output those of the `azurerm_private_endpoint` resource. The new `name` output returns the workspace name.

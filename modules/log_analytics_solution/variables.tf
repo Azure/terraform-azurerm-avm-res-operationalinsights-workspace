@@ -18,12 +18,6 @@ EOT
   nullable    = false
 }
 
-variable "log_analytics_solution_resource_group_name" {
-  type        = string
-  description = "(Required) The name of the resource group in which the Log Analytics solution is created. Changing this forces a new resource to be created. Note: The solution and its related workspace can only exist in the same resource group."
-  nullable    = false
-}
-
 variable "log_analytics_solution_solution_name" {
   type        = string
   description = "(Required) Specifies the name of the solution to be deployed. See [here for options](https://docs.microsoft.com/azure/log-analytics/log-analytics-add-solutions).Changing this forces a new resource to be created."
@@ -40,6 +34,17 @@ variable "log_analytics_solution_workspace_resource_id" {
   type        = string
   description = "(Required) The full resource ID of the Log Analytics workspace with which the solution will be linked. Changing this forces a new resource to be created."
   nullable    = false
+}
+
+variable "parent_id" {
+  type        = string
+  description = "(Required) The resource ID of the resource group in which to create the Log Analytics solution, for example `/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/example-rg`. The solution and its workspace must be in the same resource group. Changing this forces a new resource to be created."
+  nullable    = false
+
+  validation {
+    condition     = can(provider::azapi::parse_resource_id("Microsoft.Resources/resourceGroups", var.parent_id))
+    error_message = "`parent_id` must be a valid Azure resource group resource ID."
+  }
 }
 
 variable "enable_telemetry" {

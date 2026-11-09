@@ -11,7 +11,7 @@ output "resource" {
         publisher      = var.log_analytics_solution_plan.publisher
       }
     ]
-    resource_group_name   = var.log_analytics_solution_resource_group_name
+    resource_group_name   = provider::azapi::parse_resource_id("Microsoft.Resources/resourceGroups", var.parent_id).resource_group_name
     solution_name         = var.log_analytics_solution_solution_name
     tags                  = azapi_resource.this.tags == null ? tomap({}) : azapi_resource.this.tags
     workspace_name        = var.log_analytics_solution_workspace_name
