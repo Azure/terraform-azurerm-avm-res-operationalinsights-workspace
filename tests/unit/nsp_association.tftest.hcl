@@ -2,15 +2,12 @@ mock_provider "azapi" {
   alias = "mocked"
   mock_data "azapi_client_config" {
     defaults = {
+      subscription_id          = "00000000-0000-0000-0000-000000000000"
       subscription_resource_id = "/subscriptions/00000000-0000-0000-0000-000000000000"
     }
   }
-}
 
-mock_provider "azurerm" {
-  alias = "mocked"
-
-  mock_resource "azurerm_log_analytics_workspace" {
+  mock_resource "azapi_resource" {
     defaults = {
       id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/test-rg/providers/Microsoft.OperationalInsights/workspaces/test-workspace"
     }
@@ -36,9 +33,7 @@ run "association_omitted_by_default" {
   command = apply
 
   providers = {
-    azapi   = azapi.mocked
-    azurerm = azurerm.mocked
-
+    azapi  = azapi.mocked
     random = random.mocked
     time   = time.mocked
   }
@@ -49,8 +44,8 @@ run "association_omitted_by_default" {
   }
 
   assert {
-    condition     = azurerm_log_analytics_workspace.this.tags == null
-    error_message = "The workspace must retain its null tags default."
+    condition     = length(azapi_resource.this.tags) == 0
+    error_message = "The workspace must remain untagged by default."
   }
 }
 
@@ -58,9 +53,7 @@ run "association_inherits_null_tags" {
   command = apply
 
   providers = {
-    azapi   = azapi.mocked
-    azurerm = azurerm.mocked
-
+    azapi  = azapi.mocked
     random = random.mocked
     time   = time.mocked
   }
@@ -73,7 +66,7 @@ run "association_inherits_null_tags" {
   }
 
   assert {
-    condition     = var.tags == null && azurerm_log_analytics_workspace.this.tags == null && length(azapi_resource.nsp_association[0].tags) == 0
+    condition     = var.tags == null && length(azapi_resource.this.tags) == 0 && length(azapi_resource.nsp_association[0].tags) == 0
     error_message = "Omitted tags must retain the null workspace default and leave the association untagged."
   }
 
@@ -87,9 +80,7 @@ run "association_inherits_empty_tags" {
   command = apply
 
   providers = {
-    azapi   = azapi.mocked
-    azurerm = azurerm.mocked
-
+    azapi  = azapi.mocked
     random = random.mocked
     time   = time.mocked
   }
@@ -108,7 +99,7 @@ run "association_inherits_empty_tags" {
   }
 
   assert {
-    condition     = length(azurerm_log_analytics_workspace.this.tags) == 0
+    condition     = length(azapi_resource.this.tags) == 0
     error_message = "An empty tags map must remain empty on the workspace."
   }
 }
@@ -117,9 +108,7 @@ run "association_inherits_consumer_tags" {
   command = apply
 
   providers = {
-    azapi   = azapi.mocked
-    azurerm = azurerm.mocked
-
+    azapi  = azapi.mocked
     random = random.mocked
     time   = time.mocked
   }
@@ -136,7 +125,7 @@ run "association_inherits_consumer_tags" {
   }
 
   assert {
-    condition     = azapi_resource.nsp_association[0].tags == tomap(var.tags) && azurerm_log_analytics_workspace.this.tags == tomap(var.tags)
+    condition     = azapi_resource.nsp_association[0].tags == tomap(var.tags) && azapi_resource.this.tags == tomap(var.tags)
     error_message = "The association and workspace must receive the complete, unchanged consumer tags."
   }
 
@@ -146,7 +135,7 @@ run "association_inherits_consumer_tags" {
       azapi_resource.nsp_association[0].name == "nsp-assoc-test-workspace" &&
       azapi_resource.nsp_association[0].parent_id == var.network_security_perimeter_association.resource_id &&
       azapi_resource.nsp_association[0].type == "Microsoft.Network/networkSecurityPerimeters/resourceAssociations@2023-08-01-preview" &&
-      azapi_resource.nsp_association[0].body.properties.privateLinkResource.id == azurerm_log_analytics_workspace.this.id &&
+      azapi_resource.nsp_association[0].body.properties.privateLinkResource.id == azapi_resource.this.id &&
       azapi_resource.nsp_association[0].body.properties.profile.id == "${var.network_security_perimeter_association.resource_id}/profiles/test-profile"
     )
     error_message = "Tag propagation must preserve the association address, name, parent, API version and resource/profile bindings."
@@ -157,9 +146,7 @@ run "association_preserves_explicit_access_mode" {
   command = apply
 
   providers = {
-    azapi   = azapi.mocked
-    azurerm = azurerm.mocked
-
+    azapi  = azapi.mocked
     random = random.mocked
     time   = time.mocked
   }

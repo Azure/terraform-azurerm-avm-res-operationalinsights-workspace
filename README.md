@@ -4,13 +4,58 @@
 
 This repo is to deploy an Log Analytics Workspace.
 
-Private endpoints retain their existing resource addresses, names, and defaults.
+Private endpoints keep their existing names and defaults.
 `private_endpoints_manage_dns_zone_group` defaults to `true`; an explicit
 `private_endpoint_extensions[key].manage_dns_zone_group` takes precedence.
 Omitted service names default to `azuremonitor`; omitted IP configuration member
 and subresource names retain `privatelink`. Endpoint resource groups accept names
 or resource IDs. Endpoint role assignments and locks are applied when supplied;
 these previously declared settings were not implemented.
+
+## Upgrading from 0.5.x or earlier
+
+The workspace and the resources around it are now AzAPI resources, and the module no longer uses the AzureRM provider. `moved` blocks carry the workspace, its lock, diagnostic settings, role assignments, linked service and linked storage accounts, the private endpoints, the Monitor Private Link Scope scoped services and the scope locks to their new addresses in the state, so nothing is recreated. The same applies to the solution of the `log_analytics_solution` submodule and the query pack locks of the `query_packs` submodule. Terraform 1.16 or later is required.
+
+1. Keep the AzureRM provider's `provider` block in your root module until the upgrade has been applied. Terraform needs it to remove the application security group associations from the state.
+1. A `ReadOnly` lock blocks the upgrade, because the workspace, the resources under it and the private endpoints are updated, and the shared keys are read. With your current version, change it to `CanNotDelete` or remove it before upgrading, and restore it afterwards.
+1. Set `avm_managed_migration_enabled = true` for the upgrade apply. The module then reads the shared keys during plan, so resources that use `primary_shared_key` or `secondary_shared_key` of the `resource` output are not changed. It also imports the private DNS zone groups that the private endpoints had, which are now separate resources, rather than failing with `Resource already exists`. Remove the flag after the upgrade. Leave it unset on a new deployment, because a zone group that does not exist yet cannot be imported.
+1. The `log_analytics_solution` submodule now deploys AVM telemetry, which needs its new `location` input. Set `location` to the solution's region, or set `enable_telemetry = false`.
+1. Cross-tenant role assignments, which set `delegated_managed_identity_resource_id`, need extra steps. The AzureRM provider stored their ID with a `|<tenant-id>` suffix that the `moved` block cannot convert. Before planning, remove each one from the state, then import it at its new address with an `import` block in your root module:
+
+   ```pwsh
+   terraform state rm 'module.<module-name>.azurerm_role_assignment.this["<key>"]'
+   ```
+
+   ```hcl
+   import {
+     to = module.<module-name>.azapi_resource.role_assignments["<key>"]
+     id = "<role assignment resource ID, without the |<tenant-id> suffix>"
+   }
+   ```
+
+1. Run `terraform init -upgrade`, then `terraform plan`. The plan must not destroy or replace anything, except the AVM telemetry deployment of 0.3.0 or earlier. It updates the moved resources in place with the same settings. Attributes of the `resource` and `private_endpoints` outputs that come from Azure are known only after apply in this plan, except the IDs, `workspace_id` and the shared keys. The plan also adds:
+   - `azapi_resource_action.shared_keys`, which reads the shared keys;
+   - a `random_uuid` for each role assignment, which only exists in the state. The assignments keep their names;
+   - a `time_sleep` for each lock, which pauses for 30 seconds when the lock is removed;
+   - the imported private DNS zone groups, when `avm_managed_migration_enabled` is set;
+   - AVM telemetry resources, when telemetry is enabled. The telemetry resources of 0.5.x or earlier are removed from the state without being destroyed.
+
+   The application security group associations, and the update that set `SecuredByPerimeter` network access, are removed from the state without being changed in Azure. Application security groups and network access are now set on the private endpoints and the workspace.
+1. Apply the plan. Later plans report no changes, except that, when telemetry is enabled, each plan updates the AVM telemetry deployment to record the apply.
+
+Linking a dedicated cluster with `log_analytics_workspace_dedicated_cluster_resource_id` has not been tested with a real cluster.
+
+Other changes:
+
+- `parent_id` can be set instead of `resource_group_name`.
+- `resource_types`, `retry`, `timeouts` and `ignore_body_changes` cover all the module's resources, and the submodules accept them too. `log_analytics_workspace_timeouts` falls back to `timeouts` for each operation that it does not set.
+- `lock` accepts `notes`, and `role_assignments` accepts `name`.
+- The `resource` output keeps the attribute names of the `azurerm_log_analytics_workspace` resource, and the `private_endpoints` output those of the `azurerm_private_endpoint` resource. The new `name` output returns the workspace name.
+- Role names are matched, ignoring case, against the role definitions that can be assigned in the resource group, and an unknown name fails during plan.
+- Changing the SKU updates the workspace in place. The AzureRM provider recreated the workspace for most SKU changes.
+- The shared keys are read when the workspace is created, rather than on every refresh, because a `ReadOnly` lock blocks reading them. Keys regenerated outside Terraform are not picked up until you run `terraform apply -replace='module.<module-name>.azapi_resource_action.shared_keys'`.
+- The linked service of a dedicated cluster now gets the module's `tags`.
+- Locks on the workspace, private endpoints, Monitor Private Link Scopes and query packs are removed 30 seconds before the resources they protect, because Azure keeps enforcing a deleted lock for a few seconds.
 
 Major version Zero (0.y.z) is for initial development. Anything MAY change at any time. The module SHOULD NOT be considered stable till at least it is major version one (1.0.0) or greater. Changes will always be via new versions being published and no changes will be made to existing published versions. For more details please go to <https://semver.org/>
 
@@ -19,13 +64,11 @@ Major version Zero (0.y.z) is for initial development. Anything MAY change at an
 
 The following requirements are needed by this module:
 
-- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.9, < 2.0)
+- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.16, < 2.0)
 
 - <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.12)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 4.36.0, < 5.0.0)
-
-- <a name="requirement_time"></a> [time](#requirement\_time) (~> 0.9)
+- <a name="requirement_time"></a> [time](#requirement\_time) (~> 0.13)
 
 ## Resources
 
@@ -33,34 +76,40 @@ The following resources are used by this module:
 
 - [azapi_resource.ampls](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.amplscope](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.amplscope_lock](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.amplscope_scoped_service](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.data_export](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.diagnostic_settings](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.linked_service](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.linked_storage_accounts](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.lock](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.nsp_association](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.private_dns_zone_groups](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.private_endpoint_locks](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.private_endpoint_role_assignments](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.private_endpoints](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.private_endpoints_unmanaged](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.role_assignments](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.tables](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.telemetry](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.this](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource_action.shared_keys](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource_action) (resource)
 - [azapi_update_resource.amplscope_update](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/update_resource) (resource)
 - [azapi_update_resource.amplscope_update_existing](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/update_resource) (resource)
 - [azapi_update_resource.tables](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/update_resource) (resource)
-- [azapi_update_resource.this](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/update_resource) (resource)
-- [azurerm_log_analytics_linked_service.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/log_analytics_linked_service) (resource)
-- [azurerm_log_analytics_linked_storage_account.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/log_analytics_linked_storage_account) (resource)
-- [azurerm_log_analytics_workspace.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/log_analytics_workspace) (resource)
-- [azurerm_management_lock.amplscope](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/management_lock) (resource)
-- [azurerm_management_lock.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/management_lock) (resource)
-- [azurerm_monitor_diagnostic_setting.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/monitor_diagnostic_setting) (resource)
-- [azurerm_monitor_private_link_scoped_service.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/monitor_private_link_scoped_service) (resource)
-- [azurerm_private_endpoint.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_endpoint) (resource)
-- [azurerm_private_endpoint.this_unmanaged](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_endpoint) (resource)
-- [azurerm_private_endpoint_application_security_group_association.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_endpoint_application_security_group_association) (resource)
-- [azurerm_private_endpoint_application_security_group_association.this_unmanaged](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_endpoint_application_security_group_association) (resource)
-- [azurerm_role_assignment.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/role_assignment) (resource)
 - [terraform_data.telemetry](https://registry.terraform.io/providers/hashicorp/terraform/latest/docs/resources/data) (resource)
+- [time_sleep.amplscope_lock_removal](https://registry.terraform.io/providers/hashicorp/time/latest/docs/resources/sleep) (resource)
+- [time_sleep.lock_removal](https://registry.terraform.io/providers/hashicorp/time/latest/docs/resources/sleep) (resource)
+- [time_sleep.private_endpoint_lock_removal](https://registry.terraform.io/providers/hashicorp/time/latest/docs/resources/sleep) (resource)
 - [time_sleep.wait_for_ampls_update](https://registry.terraform.io/providers/hashicorp/time/latest/docs/resources/sleep) (resource)
+- [azapi_client_config.current](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/client_config) (data source)
 - [azapi_client_config.telemetry](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/client_config) (data source)
 - [azapi_resource.ampls_connections](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/resource) (data source)
 - [azapi_resource.ampls_connections_existing](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/resource) (data source)
 - [azapi_resource.ampls_existing](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/resource) (data source)
+- [azapi_resource.workspace](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/resource) (data source)
+- [azapi_resource_action.shared_keys](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/resource_action) (data source)
+- [azapi_resource_list.role_definitions](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/resource_list) (data source)
 
 <!-- markdownlint-disable MD013 -->
 ## Required Inputs
@@ -81,13 +130,25 @@ Type: `string`
 
 ### <a name="input_resource_group_name"></a> [resource\_group\_name](#input\_resource\_group\_name)
 
-Description: (Required) Specifies the name of the Resource Group in which the Log Analytics Workspace should exist. Changing this forces a new resource to be created
+Description: (Required) Specifies the name of the Resource Group in which the Log Analytics Workspace should exist. Ignored when `parent_id` is set. Changing this forces a new resource to be created
 
 Type: `string`
 
 ## Optional Inputs
 
 The following input variables are optional (have default values):
+
+### <a name="input_avm_managed_migration_enabled"></a> [avm\_managed\_migration\_enabled](#input\_avm\_managed\_migration\_enabled)
+
+Description: (Optional) Set to `true` for the apply that upgrades from version 0.5.x or earlier. The module then reads the workspace's shared keys during plan, so that resources that use them are not changed, and adopts the private DNS zone groups that earlier versions created inside the private endpoints, instead of failing with `Resource already exists`.
+
+Leave this `false` on a new deployment. An import cannot adopt a zone group that does not exist yet, so enabling it before the zone groups exist fails at plan time.
+
+Terraform skips an import whose target is already in state, so the flag is a no-op for the zone groups it adopted. Remove it after the upgrade, before adding private endpoints with new zone groups or a `ReadOnly` lock, which blocks reading the keys.
+
+Type: `bool`
+
+Default: `false`
 
 ### <a name="input_customer_managed_key"></a> [customer\_managed\_key](#input\_customer\_managed\_key)
 
@@ -162,15 +223,20 @@ Default: `true`
 Description: Body-relative dot paths to ignore on AzAPI resources that support this argument.  
 The provider does not support this setting on `azapi_update_resource`.  
 Changes take effect only after apply.  
-Ignored configuration is not sent to Azure until its path is removed.  
-Non-empty lists require Terraform 1.11 or later.
+Ignored configuration is not sent to Azure until its path is removed.
 
-- `authorization_locks` - Paths ignored on private endpoint management locks.
-- `authorization_role_assignments` - Paths ignored on private endpoint role assignments.
+- `authorization_locks` - Paths ignored on the management locks of the workspace, Monitor Private Link Scopes and private endpoints.
+- `authorization_role_assignments` - Paths ignored on the role assignments of the workspace and private endpoints.
+- `insights_diagnostic_settings` - Paths ignored on diagnostic settings.
 - `insights_private_link_scopes` - Paths ignored on newly managed Monitor Private Link Scopes.
 - `insights_private_link_scopes_scoped_resources` - Paths ignored on scoped resources.
 - `network_network_security_perimeters_resource_associations` - Paths ignored on NSP associations.
+- `network_private_endpoints` - Paths ignored on private endpoints.
+- `network_private_endpoints_private_dns_zone_groups` - Paths ignored on private DNS zone groups.
+- `operationalinsights_workspaces` - Paths ignored on the workspace.
 - `operationalinsights_workspaces_data_exports` - Paths ignored on workspace data exports.
+- `operationalinsights_workspaces_linked_services` - Paths ignored on the dedicated cluster link.
+- `operationalinsights_workspaces_linked_storage_accounts` - Paths ignored on linked storage accounts.
 - `operationalinsights_workspaces_tables` - Paths ignored on newly managed workspace tables.
 
 Type:
@@ -179,10 +245,16 @@ Type:
 object({
     authorization_locks                                       = optional(list(string), [])
     authorization_role_assignments                            = optional(list(string), [])
+    insights_diagnostic_settings                              = optional(list(string), [])
     insights_private_link_scopes                              = optional(list(string), [])
     insights_private_link_scopes_scoped_resources             = optional(list(string), [])
     network_network_security_perimeters_resource_associations = optional(list(string), [])
+    network_private_endpoints                                 = optional(list(string), [])
+    network_private_endpoints_private_dns_zone_groups         = optional(list(string), [])
+    operationalinsights_workspaces                            = optional(list(string), [])
     operationalinsights_workspaces_data_exports               = optional(list(string), [])
+    operationalinsights_workspaces_linked_services            = optional(list(string), [])
+    operationalinsights_workspaces_linked_storage_accounts    = optional(list(string), [])
     operationalinsights_workspaces_tables                     = optional(list(string), [])
   })
 ```
@@ -195,13 +267,17 @@ Description: Controls the Resource Lock configuration for this resource. The fol
 
 - `kind` - (Required) The type of lock. Possible values are `\"CanNotDelete\"` and `\"ReadOnly\"`.
 - `name` - (Optional) The name of the lock. If not specified, a name will be generated based on the `kind` value. Changing this forces the creation of a new resource.
+- `notes` - (Optional) Notes about the lock. This value maps to `Microsoft.Authorization/locks.properties.notes`. If not specified, a note describing the lock `kind` is used.
+
+A `ReadOnly` lock also blocks changes to the resources under the workspace, such as its role assignments, diagnostic settings and tables.
 
 Type:
 
 ```hcl
 object({
-    kind = string
-    name = optional(string, null)
+    kind  = string
+    name  = optional(string, null)
+    notes = optional(string, null)
   })
 ```
 
@@ -421,10 +497,12 @@ Default: `{}`
 
 ### <a name="input_log_analytics_workspace_timeouts"></a> [log\_analytics\_workspace\_timeouts](#input\_log\_analytics\_workspace\_timeouts)
 
-Description:  - `create` - (Defaults to 30 minutes) Used when creating the Log Analytics Workspace.
- - `delete` - (Defaults to 30 minutes) Used when deleting the Log Analytics Workspace.
- - `read` - (Defaults to 5 minutes) Used when retrieving the Log Analytics Workspace.
- - `update` - (Defaults to 30 minutes) Used when updating the Log Analytics Workspace.
+Description: Per-operation timeouts for the Log Analytics Workspace. An operation that is not set here uses `timeouts`, and otherwise the provider default.
+
+ - `create` - Used when creating the Log Analytics Workspace.
+ - `delete` - Used when deleting the Log Analytics Workspace.
+ - `read` - Used when retrieving the Log Analytics Workspace.
+ - `update` - Used when updating the Log Analytics Workspace.
 
 Type:
 
@@ -528,6 +606,14 @@ object({
     access_mode  = optional(string, "Learning")
   })
 ```
+
+Default: `null`
+
+### <a name="input_parent_id"></a> [parent\_id](#input\_parent\_id)
+
+Description: The resource ID of the resource group in which to create the Log Analytics Workspace, for example `/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/example-rg`. When provided, takes precedence over `resource_group_name`. Changing this forces a new resource to be created.
+
+Type: `string`
 
 Default: `null`
 
@@ -643,15 +729,20 @@ Default: `true`
 
 ### <a name="input_resource_types"></a> [resource\_types](#input\_resource\_types)
 
-Description: AzAPI resource types and API versions. Defaults preserve the existing API versions.
+Description: AzAPI resource types and API versions, in `<provider>/<resource>@<api-version>` form. Each key defaults to a tested value; supply only the keys you want to override.
 
-- `authorization_locks` - Private endpoint management locks.
-- `authorization_role_assignments` - Private endpoint role assignments.
+- `authorization_locks` - The management locks of the workspace, Monitor Private Link Scopes and private endpoints.
+- `authorization_role_assignments` - The role assignments of the workspace and private endpoints.
+- `insights_diagnostic_settings` - Diagnostic settings.
 - `insights_private_link_scopes` - Monitor Private Link Scopes and their updates.
-- `insights_private_link_scopes_scoped_resources` - Resources connected to existing scopes.
+- `insights_private_link_scopes_scoped_resources` - The workspace's connections to Monitor Private Link Scopes.
 - `network_network_security_perimeters_resource_associations` - NSP associations.
-- `operationalinsights_workspaces` - Workspace network-access updates.
+- `network_private_endpoints` - Private endpoints.
+- `network_private_endpoints_private_dns_zone_groups` - Private DNS zone groups.
+- `operationalinsights_workspaces` - The workspace, and reading its shared keys.
 - `operationalinsights_workspaces_data_exports` - Workspace data exports.
+- `operationalinsights_workspaces_linked_services` - The dedicated cluster link.
+- `operationalinsights_workspaces_linked_storage_accounts` - Linked storage accounts.
 - `operationalinsights_workspaces_tables` - Workspace tables and table updates.
 
 Type:
@@ -660,11 +751,16 @@ Type:
 object({
     authorization_locks                                       = optional(string, "Microsoft.Authorization/locks@2020-05-01")
     authorization_role_assignments                            = optional(string, "Microsoft.Authorization/roleAssignments@2022-04-01")
+    insights_diagnostic_settings                              = optional(string, "Microsoft.Insights/diagnosticSettings@2021-05-01-preview")
     insights_private_link_scopes                              = optional(string, "microsoft.insights/privateLinkScopes@2021-07-01-preview")
     insights_private_link_scopes_scoped_resources             = optional(string, "Microsoft.Insights/privateLinkScopes/scopedResources@2021-07-01-preview")
     network_network_security_perimeters_resource_associations = optional(string, "Microsoft.Network/networkSecurityPerimeters/resourceAssociations@2023-08-01-preview")
+    network_private_endpoints                                 = optional(string, "Microsoft.Network/privateEndpoints@2025-01-01")
+    network_private_endpoints_private_dns_zone_groups         = optional(string, "Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2025-01-01")
     operationalinsights_workspaces                            = optional(string, "Microsoft.OperationalInsights/workspaces@2023-09-01")
     operationalinsights_workspaces_data_exports               = optional(string, "Microsoft.OperationalInsights/workspaces/dataExports@2020-08-01")
+    operationalinsights_workspaces_linked_services            = optional(string, "Microsoft.OperationalInsights/workspaces/linkedServices@2020-08-01")
+    operationalinsights_workspaces_linked_storage_accounts    = optional(string, "Microsoft.OperationalInsights/workspaces/linkedStorageAccounts@2020-08-01")
     operationalinsights_workspaces_tables                     = optional(string, "Microsoft.OperationalInsights/workspaces/tables@2022-10-01")
   })
 ```
@@ -694,12 +790,13 @@ Default: `null`
 
 ### <a name="input_role_assignments"></a> [role\_assignments](#input\_role\_assignments)
 
-Description:   A map of role assignments to create on the <RESOURCE>. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
+Description:   A map of role assignments to create on the Log Analytics Workspace. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
 
-  - `role_definition_id_or_name` - The ID or name of the role definition to assign to the principal.
+  - `name` - (Optional) The name of the role assignment. If not set, a random UUID will be generated. Changing this forces the creation of a new resource. Role assignments created by earlier versions of this module keep their existing name.
+  - `role_definition_id_or_name` - The ID or name of the role definition to assign to the principal. A name is matched, ignoring case, against the role definitions that can be assigned in the resource group. For a custom role that can only be assigned on this workspace, use its ID.
   - `principal_id` - The ID of the principal to assign the role to.
   - `description` - (Optional) The description of the role assignment.
-  - `skip_service_principal_aad_check` - (Optional) If set to true, skips the Azure Active Directory check for the service principal in the tenant. Defaults to false.
+  - `skip_service_principal_aad_check` - (Optional) If set to true and `principal_type` is not set, `principal_type` is set to `ServicePrincipal`, which skips the Azure Active Directory check for the service principal in the tenant. Defaults to false.
   - `condition` - (Optional) The condition which will be used to scope the role assignment.
   - `condition_version` - (Optional) The version of the condition syntax. Leave as `null` if you are not using a condition, if you are then valid values are '2.0'.
   - `delegated_managed_identity_resource_id` - (Optional) The delegated Azure Resource Id which contains a Managed Identity. Changing this forces a new resource to be created. This field is only used in cross-tenant scenario.
@@ -711,6 +808,7 @@ Type:
 
 ```hcl
 map(object({
+    name                                   = optional(string, null)
     role_definition_id_or_name             = string
     principal_id                           = string
     description                            = optional(string, null)
@@ -735,6 +833,7 @@ Default: `null`
 ### <a name="input_timeouts"></a> [timeouts](#input\_timeouts)
 
 Description: Per-operation timeouts applied to every supported AzAPI resource declared by this module.  
+The workspace uses `log_analytics_workspace_timeouts` first, for the operations that it sets.  
 Defaults to null (provider defaults). Values are Go duration strings.
 
 - `create` - Create timeout.
@@ -759,13 +858,19 @@ Default: `null`
 
 The following outputs are exported:
 
+### <a name="output_name"></a> [name](#output\_name)
+
+Description: The name of the Log Analytics Workspace.
+
 ### <a name="output_private_endpoints"></a> [private\_endpoints](#output\_private\_endpoints)
 
-Description:   A map of the private endpoints created.
+Description: A map of the private endpoints created, with the attribute names of the `azurerm_private_endpoint` resource that earlier versions of this module returned, so that existing references keep working.
+`private_service_connection[0].private_ip_address` is the first IP address in `custom_dns_configs`.
 
 ### <a name="output_resource"></a> [resource](#output\_resource)
 
-Description: "This is the full output for the Log Analytics resource. This is the default output for the module following AVM standards. Review the examples below for the correct output to use in your module."  
+Description: The Log Analytics Workspace, with the attribute names of the `azurerm_log_analytics_workspace` resource that earlier versions of this module returned, so that existing references keep working. Prefer `resource_id` and `name`.
+`primary_shared_key` and `secondary_shared_key` are read when the workspace is created, and when it is upgraded from version 0.5.x or earlier.  
 Examples:
 - module.log\_analytics.resource.id
 - module.log\_analytics.resource.name

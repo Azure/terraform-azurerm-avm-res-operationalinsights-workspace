@@ -38,8 +38,8 @@ data "azapi_resource" "ampls_connections" {
   response_export_values = ["properties.privateEndpointConnections"]
 
   depends_on = [
-    azurerm_private_endpoint.this,
-    azurerm_private_endpoint.this_unmanaged
+    azapi_resource.private_endpoints,
+    azapi_resource.private_endpoints_unmanaged,
   ]
 }
 
@@ -62,7 +62,7 @@ resource "azapi_update_resource" "amplscope_update" {
           flatten([
             for k, v in var.private_endpoints : [
               for connection_name in [
-                try([for c in data.azapi_resource.ampls_connections[each.key].output.properties.privateEndpointConnections : c.name if lower(c.properties.privateEndpoint.id) == lower(local.private_endpoint_manage_dns_zone_group[k] ? azurerm_private_endpoint.this[k].id : azurerm_private_endpoint.this_unmanaged[k].id)][0], (v.private_service_connection_name != null ? v.private_service_connection_name : "pse-${var.name}"))
+                try([for c in data.azapi_resource.ampls_connections[each.key].output.properties.privateEndpointConnections : c.name if lower(c.properties.privateEndpoint.id) == lower(local.private_endpoint_ids[k])][0], (v.private_service_connection_name != null ? v.private_service_connection_name : "pse-${var.name}"))
                 ] : {
                 ingestionAccessMode           = try(var.private_endpoint_extensions[k].monitor_private_link_scope_exclusion, null) == null ? "PrivateOnly" : var.private_endpoint_extensions[k].monitor_private_link_scope_exclusion.ingestion_access_mode
                 privateEndpointConnectionName = connection_name
@@ -100,17 +100,40 @@ resource "azapi_update_resource" "amplscope_update" {
   }
 }
 
-resource "azurerm_monitor_private_link_scoped_service" "this" {
+resource "azapi_resource" "amplscope_scoped_service" {
   for_each = var.monitor_private_link_scope
 
-  linked_resource_id  = azurerm_log_analytics_workspace.this.id
-  name                = var.monitor_private_link_scoped_service_name
-  resource_group_name = var.resource_group_name
-  scope_name          = azapi_resource.amplscope[each.key].name
+  name = var.monitor_private_link_scoped_service_name
+  # The ID is built as the AzureRM provider built it, from the workspace's resource group, so that upgrading
+  # does not replace the scoped service. The scope's own ID cannot be used, because it has the type in lower
+  # case.
+  parent_id = "${local.parent_id}/providers/Microsoft.Insights/privateLinkScopes/${azapi_resource.amplscope[each.key].name}"
+  type      = var.resource_types.insights_private_link_scopes_scoped_resources
+  body = {
+    properties = {
+      linkedResourceId = azapi_resource.this.id
+    }
+  }
+  ignore_body_changes = length(var.ignore_body_changes.insights_private_link_scopes_scoped_resources) > 0 ? var.ignore_body_changes.insights_private_link_scopes_scoped_resources : null
+  ignore_casing       = true
+  # The AzureRM provider replaced the scoped service when the linked workspace changed. While the prior value
+  # is null, as it is straight after upgrading from AzureRM, nothing is replaced.
+  replace_triggers_external_values = {
+    linked_resource_id = lower(azapi_resource.this.id)
+  }
+  response_export_values = []
+  retry                  = var.retry
 
-  depends_on = [
-    azapi_update_resource.this
-  ]
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+
+    content {
+      create = timeouts.value.create
+      delete = timeouts.value.delete
+      read   = timeouts.value.read
+      update = timeouts.value.update
+    }
+  }
 }
 
 resource "time_sleep" "wait_for_ampls_update" {
@@ -118,19 +141,19 @@ resource "time_sleep" "wait_for_ampls_update" {
   destroy_duration = "30s"
 
   depends_on = [
-    azurerm_monitor_private_link_scoped_service.this
+    azapi_resource.amplscope_scoped_service
   ]
 }
 
 resource "azapi_resource" "ampls" {
   for_each = var.monitor_private_link_scoped_resource
 
-  name      = each.value.name != null ? each.value.name : azurerm_log_analytics_workspace.this.name
+  name      = each.value.name != null ? each.value.name : azapi_resource.this.name
   parent_id = each.value.resource_id
   type      = var.resource_types.insights_private_link_scopes_scoped_resources
   body = {
     properties = {
-      linkedResourceId = azurerm_log_analytics_workspace.this.id
+      linkedResourceId = azapi_resource.this.id
     }
   }
   ignore_body_changes    = length(var.ignore_body_changes.insights_private_link_scopes_scoped_resources) > 0 ? var.ignore_body_changes.insights_private_link_scopes_scoped_resources : null
@@ -169,8 +192,8 @@ data "azapi_resource" "ampls_connections_existing" {
   response_export_values = ["properties.privateEndpointConnections"]
 
   depends_on = [
-    azurerm_private_endpoint.this,
-    azurerm_private_endpoint.this_unmanaged
+    azapi_resource.private_endpoints,
+    azapi_resource.private_endpoints_unmanaged,
   ]
 }
 
@@ -193,7 +216,7 @@ resource "azapi_update_resource" "amplscope_update_existing" {
           flatten([
             for k, v in var.private_endpoints : [
               for connection_name in [
-                try([for c in data.azapi_resource.ampls_connections_existing[each.key].output.properties.privateEndpointConnections : c.name if lower(c.properties.privateEndpoint.id) == lower(local.private_endpoint_manage_dns_zone_group[k] ? azurerm_private_endpoint.this[k].id : azurerm_private_endpoint.this_unmanaged[k].id)][0], (v.private_service_connection_name != null ? v.private_service_connection_name : "pse-${var.name}"))
+                try([for c in data.azapi_resource.ampls_connections_existing[each.key].output.properties.privateEndpointConnections : c.name if lower(c.properties.privateEndpoint.id) == lower(local.private_endpoint_ids[k])][0], (v.private_service_connection_name != null ? v.private_service_connection_name : "pse-${var.name}"))
                 ] : {
                 ingestionAccessMode           = try(var.private_endpoint_extensions[k].monitor_private_link_scope_exclusion, null) == null ? "PrivateOnly" : var.private_endpoint_extensions[k].monitor_private_link_scope_exclusion.ingestion_access_mode
                 privateEndpointConnectionName = connection_name
@@ -231,10 +254,53 @@ resource "azapi_update_resource" "amplscope_update_existing" {
   }
 }
 
-resource "azurerm_management_lock" "amplscope" {
+resource "azapi_resource" "amplscope_lock" {
   for_each = { for k, v in var.monitor_private_link_scope : k => v if v.lock != null }
 
-  lock_level = each.value.lock.kind
-  name       = try(each.value.lock.name, null) != null ? each.value.lock.name : "${azapi_resource.amplscope[each.key].name}-lock"
-  scope      = azapi_resource.amplscope[each.key].id
+  name      = try(each.value.lock.name, null) != null ? each.value.lock.name : "${azapi_resource.amplscope[each.key].name}-lock"
+  parent_id = azapi_resource.amplscope[each.key].id
+  type      = var.resource_types.authorization_locks
+  body = {
+    properties = {
+      level = each.value.lock.kind
+      # The empty notes that earlier versions of this module wrote, so that upgrading leaves the lock unchanged.
+      notes = ""
+    }
+  }
+  ignore_body_changes    = length(var.ignore_body_changes.authorization_locks) > 0 ? var.ignore_body_changes.authorization_locks : null
+  response_export_values = []
+  retry                  = var.retry
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+
+    content {
+      create = timeouts.value.create
+      delete = timeouts.value.delete
+      read   = timeouts.value.read
+      update = timeouts.value.update
+    }
+  }
+
+  depends_on = [time_sleep.amplscope_lock_removal]
+}
+
+# Azure keeps enforcing a deleted lock for a few seconds, and the AzAPI provider does not wait for it to be
+# gone as the AzureRM provider did. This pause is destroyed after the lock and before the scope's scoped
+# services and private endpoint connections.
+resource "time_sleep" "amplscope_lock_removal" {
+  for_each = { for k, v in var.monitor_private_link_scope : k => v if v.lock != null }
+
+  destroy_duration = "30s"
+  # Replacing the scope replaces its lock, so the pause is replaced with them.
+  triggers = {
+    scope_id = azapi_resource.amplscope[each.key].id
+  }
+
+  depends_on = [
+    azapi_resource.amplscope_scoped_service,
+    azapi_resource.private_endpoints,
+    azapi_resource.private_endpoints_unmanaged,
+    azapi_update_resource.amplscope_update,
+  ]
 }
