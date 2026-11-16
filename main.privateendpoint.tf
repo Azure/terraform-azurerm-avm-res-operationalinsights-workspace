@@ -1,92 +1,120 @@
-resource "azurerm_private_endpoint" "this" {
+resource "azapi_resource" "private_endpoints" {
   for_each = { for k, v in var.private_endpoints : k => v if local.private_endpoint_manage_dns_zone_group[k] }
 
-  location                      = each.value.location != null ? each.value.location : var.location
-  name                          = each.value.name != null ? each.value.name : "pep-${var.name}"
-  resource_group_name           = each.value.resource_group_name == null ? var.resource_group_name : try(provider::azapi::parse_resource_id("Microsoft.Resources/resourceGroups", each.value.resource_group_name).resource_group_name, each.value.resource_group_name)
-  subnet_id                     = each.value.subnet_resource_id
-  custom_network_interface_name = each.value.network_interface_name
-  tags                          = each.value.tags
-
-  private_service_connection {
-    is_manual_connection = false
-    name                 = each.value.private_service_connection_name != null ? each.value.private_service_connection_name : "pse-${var.name}"
-    private_connection_resource_id = try(
-      azapi_resource.amplscope[try(var.private_endpoint_extensions[each.key].monitor_private_link_scope_key, null)].id,
-      lower(var.monitor_private_link_scoped_resource[try(var.private_endpoint_extensions[each.key].monitor_private_link_scope_key, null)].resource_id),
-      azapi_resource.amplscope[each.key].id,
-      lower(var.monitor_private_link_scoped_resource[each.key].resource_id),
-      length(var.monitor_private_link_scope) + length(var.monitor_private_link_scoped_resource) == 1 ? coalesce(try(lower(one(values(var.monitor_private_link_scoped_resource)).resource_id), null), try(one(values(azapi_resource.amplscope)).id, null)) : null
-    )
-    subresource_names = [coalesce(each.value.subresource_name, "azuremonitor")]
+  location  = each.value.location != null ? each.value.location : var.location
+  name      = local.private_endpoint_names[each.key]
+  parent_id = local.private_endpoint_parent_ids[each.key]
+  type      = var.resource_types.network_private_endpoints
+  body = {
+    properties = local.private_endpoint_properties[each.key]
   }
+  ignore_body_changes  = length(var.ignore_body_changes.network_private_endpoints) > 0 ? var.ignore_body_changes.network_private_endpoints : null
+  ignore_casing        = true
+  ignore_null_property = true
+  # Azure can return the application security groups in a different order from the one they were sent in.
+  list_unique_id_property = {
+    "properties.applicationSecurityGroups" = "id"
+  }
+  replace_triggers_external_values = local.private_endpoint_replace_triggers[each.key]
+  response_export_values = {
+    custom_dns_configs = "properties.customDnsConfigs"
+    network_interfaces = "properties.networkInterfaces"
+  }
+  retry = var.retry
+  tags  = each.value.tags
 
-  dynamic "ip_configuration" {
-    for_each = each.value.ip_configurations
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
 
     content {
-      name               = ip_configuration.value.name
-      private_ip_address = ip_configuration.value.private_ip_address
-      member_name        = coalesce(ip_configuration.value.member_name, "privatelink")
-      subresource_name   = coalesce(each.value.subresource_name, "privatelink")
-    }
-  }
-
-  dynamic "private_dns_zone_group" {
-    for_each = length(each.value.private_dns_zone_resource_ids) > 0 ? ["this"] : []
-
-    content {
-      name                 = each.value.private_dns_zone_group_name
-      private_dns_zone_ids = each.value.private_dns_zone_resource_ids
+      create = timeouts.value.create
+      delete = timeouts.value.delete
+      read   = timeouts.value.read
+      update = timeouts.value.update
     }
   }
 }
 
-resource "azurerm_private_endpoint" "this_unmanaged" {
+# Private endpoints whose DNS zone group is managed outside this module, for example by Azure Policy.
+resource "azapi_resource" "private_endpoints_unmanaged" {
   for_each = { for k, v in var.private_endpoints : k => v if !local.private_endpoint_manage_dns_zone_group[k] }
 
-  location                      = each.value.location != null ? each.value.location : var.location
-  name                          = each.value.name != null ? each.value.name : "pep-${var.name}"
-  resource_group_name           = each.value.resource_group_name == null ? var.resource_group_name : try(provider::azapi::parse_resource_id("Microsoft.Resources/resourceGroups", each.value.resource_group_name).resource_group_name, each.value.resource_group_name)
-  subnet_id                     = each.value.subnet_resource_id
-  custom_network_interface_name = each.value.network_interface_name
-  tags                          = each.value.tags
-
-  private_service_connection {
-    is_manual_connection = false
-    name                 = each.value.private_service_connection_name != null ? each.value.private_service_connection_name : "pse-${var.name}"
-    private_connection_resource_id = try(
-      azapi_resource.amplscope[try(var.private_endpoint_extensions[each.key].monitor_private_link_scope_key, null)].id,
-      lower(var.monitor_private_link_scoped_resource[try(var.private_endpoint_extensions[each.key].monitor_private_link_scope_key, null)].resource_id),
-      azapi_resource.amplscope[each.key].id,
-      lower(var.monitor_private_link_scoped_resource[each.key].resource_id),
-      length(var.monitor_private_link_scope) + length(var.monitor_private_link_scoped_resource) == 1 ? coalesce(try(lower(one(values(var.monitor_private_link_scoped_resource)).resource_id), null), try(one(values(azapi_resource.amplscope)).id, null)) : null
-    )
-    subresource_names = [coalesce(each.value.subresource_name, "azuremonitor")]
+  location  = each.value.location != null ? each.value.location : var.location
+  name      = local.private_endpoint_names[each.key]
+  parent_id = local.private_endpoint_parent_ids[each.key]
+  type      = var.resource_types.network_private_endpoints
+  body = {
+    properties = local.private_endpoint_properties[each.key]
   }
+  ignore_body_changes  = length(var.ignore_body_changes.network_private_endpoints) > 0 ? var.ignore_body_changes.network_private_endpoints : null
+  ignore_casing        = true
+  ignore_null_property = true
+  # Azure can return the application security groups in a different order from the one they were sent in.
+  list_unique_id_property = {
+    "properties.applicationSecurityGroups" = "id"
+  }
+  replace_triggers_external_values = local.private_endpoint_replace_triggers[each.key]
+  response_export_values = {
+    custom_dns_configs = "properties.customDnsConfigs"
+    network_interfaces = "properties.networkInterfaces"
+  }
+  retry = var.retry
+  tags  = each.value.tags
 
-  dynamic "ip_configuration" {
-    for_each = each.value.ip_configurations
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
 
     content {
-      name               = ip_configuration.value.name
-      private_ip_address = ip_configuration.value.private_ip_address
-      member_name        = coalesce(ip_configuration.value.member_name, "privatelink")
-      subresource_name   = coalesce(each.value.subresource_name, "privatelink")
+      create = timeouts.value.create
+      delete = timeouts.value.delete
+      read   = timeouts.value.read
+      update = timeouts.value.update
     }
   }
 }
 
-resource "azurerm_private_endpoint_application_security_group_association" "this" {
-  for_each = { for k, v in local.private_endpoint_application_security_group_associations : k => v if local.private_endpoint_manage_dns_zone_group[v.pe_key] }
+resource "azapi_resource" "private_dns_zone_groups" {
+  for_each = local.private_dns_zone_groups
 
-  application_security_group_id = each.value.asg_resource_id
-  private_endpoint_id           = azurerm_private_endpoint.this[each.value.pe_key].id
+  name      = each.value.name
+  parent_id = azapi_resource.private_endpoints[each.key].id
+  type      = var.resource_types.network_private_endpoints_private_dns_zone_groups
+  body = {
+    properties = {
+      privateDnsZoneConfigs = [
+        for private_dns_zone_resource_id in each.value.private_dns_zone_resource_ids : {
+          name = element(reverse(split("/", private_dns_zone_resource_id)), 0)
+          properties = {
+            privateDnsZoneId = private_dns_zone_resource_id
+          }
+        }
+      ]
+    }
+  }
+  ignore_body_changes    = length(var.ignore_body_changes.network_private_endpoints_private_dns_zone_groups) > 0 ? var.ignore_body_changes.network_private_endpoints_private_dns_zone_groups : null
+  ignore_casing          = true
+  response_export_values = []
+  retry                  = var.retry
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+
+    content {
+      create = timeouts.value.create
+      delete = timeouts.value.delete
+      read   = timeouts.value.read
+      update = timeouts.value.update
+    }
+  }
 }
 
-resource "azurerm_private_endpoint_application_security_group_association" "this_unmanaged" {
-  for_each = { for k, v in local.private_endpoint_application_security_group_associations : k => v if !local.private_endpoint_manage_dns_zone_group[v.pe_key] }
+# Adopts the zone groups that versions 0.5.x and earlier created as part of the private endpoint, so that
+# upgrading does not fail with `Resource already exists`. The gate is required: on a new deployment the zone
+# group does not exist yet and an unconditional import fails at plan time. Terraform skips an import whose
+# target is already in state, so leaving the flag set after the upgrade is a no-op for those zone groups.
+import {
+  for_each = var.avm_managed_migration_enabled ? local.private_dns_zone_group_imports : {}
 
-  application_security_group_id = each.value.asg_resource_id
-  private_endpoint_id           = azurerm_private_endpoint.this_unmanaged[each.value.pe_key].id
+  to = azapi_resource.private_dns_zone_groups[each.key]
+  id = each.value
 }
