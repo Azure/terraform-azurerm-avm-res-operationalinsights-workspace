@@ -79,11 +79,12 @@ resource "azapi_resource" "subnet" {
 
 module "privatednszone" {
   source  = "Azure/avm-res-network-privatednszone/azurerm"
-  version = "0.5.0"
+  version = "0.6.0"
 
   domain_name      = "privatelink.monitor.azure.com"
   parent_id        = azapi_resource.this.id
   enable_telemetry = var.enable_telemetry
+  location         = azapi_resource.this.location
   virtual_network_links = {
     vnetlink0 = {
       name               = "dnslinktovnet"
@@ -186,7 +187,7 @@ Version: 0.3.0
 
 Source: Azure/avm-res-network-privatednszone/azurerm
 
-Version: 0.5.0
+Version: 0.6.0
 
 <!-- markdownlint-disable-next-line MD041 -->
 ## Data Collection
